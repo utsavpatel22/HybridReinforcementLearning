@@ -68,22 +68,13 @@ class TurtleBot2Env(robot_gazebo_env.RobotGazeboEnv):
         self._check_all_sensors_ready()
 
         # We Start all the ROS related Subscribers and publishers
-        rospy.Subscriber("/turtlebot0/odom", Odometry, self._odom_callback_0)
-        rospy.Subscriber("/turtlebot1/odom", Odometry, self._odom_callback_1)
-        rospy.Subscriber("/turtlebot2/odom", Odometry, self._odom_callback_2)
-        rospy.Subscriber("/turtlebot3/odom", Odometry, self._odom_callback_3)
+        rospy.Subscriber("/odom", Odometry, self._odom_callback)
         #rospy.Subscriber("/camera/depth/image_raw", Image, self._camera_depth_image_raw_callback)
         #rospy.Subscriber("/camera/depth/points", PointCloud2, self._camera_depth_points_callback)
         #rospy.Subscriber("/camera/rgb/image_raw", Image, self._camera_rgb_image_raw_callback)
-        rospy.Subscriber("/turtlebot0/scan_filtered", LaserScan, self._laser_scan_callback_0)
-        rospy.Subscriber("/turtlebot1/scan_filtered", LaserScan, self._laser_scan_callback_1)
-        rospy.Subscriber("/turtlebot2/scan_filtered", LaserScan, self._laser_scan_callback_2)
-        rospy.Subscriber("/turtlebot3/scan_filtered", LaserScan, self._laser_scan_callback_3)
+        rospy.Subscriber("/kobuki/laser/scan", LaserScan, self._laser_scan_callback)
 
-        self._cmd_vel_pub_0 = rospy.Publisher('/turtlebot0/cmd_vel_mux/input/navi', Twist, queue_size=1)
-        self._cmd_vel_pub_1 = rospy.Publisher('/turtlebot1/cmd_vel_mux/input/navi', Twist, queue_size=1)
-        self._cmd_vel_pub_2 = rospy.Publisher('/turtlebot2/cmd_vel_mux/input/navi', Twist, queue_size=1)
-        self._cmd_vel_pub_3 = rospy.Publisher('/turtlebot3/cmd_vel_mux/input/navi', Twist, queue_size=1)
+        self._cmd_vel_pub = rospy.Publisher('/cmd_vel', Twist, queue_size=1)
 
         self._check_publishers_connection()
 
@@ -110,121 +101,93 @@ class TurtleBot2Env(robot_gazebo_env.RobotGazeboEnv):
     def _check_all_sensors_ready(self):
         rospy.logdebug("START ALL SENSORS READY")
         self._check_odom_ready()
+        # We dont need to check for the moment, takes too long
+        #self._check_camera_depth_image_raw_ready()
+        #self._check_camera_depth_points_ready()
+        #self._check_camera_rgb_image_raw_ready()
         self._check_laser_scan_ready()
         rospy.logdebug("ALL SENSORS READY")
 
     def _check_odom_ready(self):
-        self.odom_0 = None
-        rospy.logdebug("Waiting for /odom_0 to be READY...")
-        while self.odom_0 is None and not rospy.is_shutdown():
+        self.odom = None
+        rospy.logdebug("Waiting for /odom to be READY...")
+        while self.odom is None and not rospy.is_shutdown():
             try:
-                self.odom_0 = rospy.wait_for_message("/turtlebot0/odom", Odometry, timeout=5.0)
-                rospy.logdebug("Current /odom_0 READY=>")
+                self.odom = rospy.wait_for_message("/odom", Odometry, timeout=5.0)
+                rospy.logdebug("Current /odom READY=>")
 
             except:
-                rospy.logerr("Current /odom_0 not ready yet, retrying for getting odom")
+                rospy.logerr("Current /odom not ready yet, retrying for getting odom")
 
-        self.odom_1 = None
-        rospy.logdebug("Waiting for /odom_1 to be READY...")
-        while self.odom_1 is None and not rospy.is_shutdown():
-            try:
-                self.odom_1 = rospy.wait_for_message("/turtlebot1/odom", Odometry, timeout=5.0)
-                rospy.logdebug("Current /odom_1 READY=>")
-
-            except:
-                rospy.logerr("Current /odom_1 not ready yet, retrying for getting odom")
-
-        self.odom_2 = None
-        rospy.logdebug("Waiting for /odom_2 to be READY...")
-        while self.odom_2 is None and not rospy.is_shutdown():
-            try:
-                self.odom_2 = rospy.wait_for_message("/turtlebot2/odom", Odometry, timeout=5.0)
-                rospy.logdebug("Current /odom_2 READY=>")
-
-            except:
-                rospy.logerr("Current /odom_2 not ready yet, retrying for getting odom")
-
-        self.odom_3 = None
-        rospy.logdebug("Waiting for /odom_3 to be READY...")
-        while self.odom_3 is None and not rospy.is_shutdown():
-            try:
-                self.odom_3 = rospy.wait_for_message("/turtlebot3/odom", Odometry, timeout=5.0)
-                rospy.logdebug("Current /odom_3 READY=>")
-
-            except:
-                rospy.logerr("Current /odom_3 not ready yet, retrying for getting odom")
-
-        return self.odom_0, self.odom_1, self.odom_2, self.odom_3
+        return self.odom
         
+        
+    def _check_camera_depth_image_raw_ready(self):
+        self.camera_depth_image_raw = None
+        rospy.logdebug("Waiting for /camera/depth/image_raw to be READY...")
+        while self.camera_depth_image_raw is None and not rospy.is_shutdown():
+            try:
+                self.camera_depth_image_raw = rospy.wait_for_message("/camera/depth/image_raw", Image, timeout=5.0)
+                rospy.logdebug("Current /camera/depth/image_raw READY=>")
+
+            except:
+                rospy.logerr("Current /camera/depth/image_raw not ready yet, retrying for getting camera_depth_image_raw")
+        return self.camera_depth_image_raw
+        
+        
+    def _check_camera_depth_points_ready(self):
+        self.camera_depth_points = None
+        rospy.logdebug("Waiting for /camera/depth/points to be READY...")
+        while self.camera_depth_points is None and not rospy.is_shutdown():
+            try:
+                self.camera_depth_points = rospy.wait_for_message("/camera/depth/points", PointCloud2, timeout=10.0)
+                rospy.logdebug("Current /camera/depth/points READY=>")
+
+            except:
+                rospy.logerr("Current /camera/depth/points not ready yet, retrying for getting camera_depth_points")
+        return self.camera_depth_points
+        
+        
+    def _check_camera_rgb_image_raw_ready(self):
+        self.camera_rgb_image_raw = None
+        rospy.logdebug("Waiting for /camera/rgb/image_raw to be READY...")
+        while self.camera_rgb_image_raw is None and not rospy.is_shutdown():
+            try:
+                self.camera_rgb_image_raw = rospy.wait_for_message("/camera/rgb/image_raw", Image, timeout=5.0)
+                rospy.logdebug("Current /camera/rgb/image_raw READY=>")
+
+            except:
+                rospy.logerr("Current /camera/rgb/image_raw not ready yet, retrying for getting camera_rgb_image_raw")
+        return self.camera_rgb_image_raw
         
 
     def _check_laser_scan_ready(self):
-        self.laser_scan_0 = None
-        rospy.logdebug("Waiting for /turtlebot0/scan_filtered to be READY...")
-        while self.laser_scan_0 is None and not rospy.is_shutdown():
+        self.laser_scan = None
+        rospy.logdebug("Waiting for /kobuki/laser/scan to be READY...")
+        while self.laser_scan is None and not rospy.is_shutdown():
             try:
-                self.laser_scan_0 = rospy.wait_for_message("/turtlebot0/scan_filtered", LaserScan, timeout=5.0)
-                rospy.logdebug("Current /turtlebot0/scan_filtered READY=>")
+                self.laser_scan = rospy.wait_for_message("/kobuki/laser/scan", LaserScan, timeout=5.0)
+                rospy.logdebug("Current /kobuki/laser/scan READY=>")
 
             except:
-                rospy.logerr("Current /turtlebot0/scan_filtered not ready yet, retrying for getting laser_scan")
-
-        self.laser_scan_1 = None
-        rospy.logdebug("Waiting for /turtlebot1/scan_filtered to be READY...")
-        while self.laser_scan_1 is None and not rospy.is_shutdown():
-            try:
-                self.laser_scan_1 = rospy.wait_for_message("/turtlebot1/scan_filtered", LaserScan, timeout=5.0)
-                rospy.logdebug("Current /turtlebot1/scan_filtered READY=>")
-
-            except:
-                rospy.logerr("Current /turtlebot1/scan_filtered not ready yet, retrying for getting laser_scan")
-
-        self.laser_scan_2 = None
-        rospy.logdebug("Waiting for /turtlebot2/scan_filtered to be READY...")
-        while self.laser_scan_2 is None and not rospy.is_shutdown():
-            try:
-                self.laser_scan_2 = rospy.wait_for_message("/turtlebot2/scan_filtered", LaserScan, timeout=5.0)
-                rospy.logdebug("Current /turtlebot2/scan_filtered READY=>")
-
-            except:
-                rospy.logerr("Current /turtlebot2/scan_filtered not ready yet, retrying for getting laser_scan")
-
-        self.laser_scan_3 = None
-        rospy.logdebug("Waiting for /turtlebot3/scan_filtered to be READY...")
-        while self.laser_scan_3 is None and not rospy.is_shutdown():
-            try:
-                self.laser_scan_3 = rospy.wait_for_message("/turtlebot3/scan_filtered", LaserScan, timeout=5.0)
-                rospy.logdebug("Current /turtlebot3/scan_filtered READY=>")
-
-            except:
-                rospy.logerr("Current /turtlebot3/scan_filtered not ready yet, retrying for getting laser_scan")
-        return self.laser_scan_0, self.laser_scan_1, self.laser_scan_2, self.laser_scan_3 
+                rospy.logerr("Current /kobuki/laser/scan not ready yet, retrying for getting laser_scan")
+        return self.laser_scan
         
 
-    def _odom_callback_0(self, data):
-        self.odom_0 = data
-
-    def _odom_callback_1(self, data):
-        self.odom_1 = data
-
-    def _odom_callback_2(self, data):
-        self.odom_2 = data
-
-    def _odom_callback_3(self, data):
-        self.odom_3 = data
+    def _odom_callback(self, data):
+        self.odom = data
     
+    def _camera_depth_image_raw_callback(self, data):
+        self.camera_depth_image_raw = data
         
-    def _laser_scan_callback_0(self, data):
-        self.laser_scan_0 = data
-
-    def _laser_scan_callback_1(self, data):
-        self.laser_scan_1 = data
-
-    def _laser_scan_callback_2(self, data):
-        self.laser_scan_2 = data
-
-    def _laser_scan_callback_3(self, data):
-        self.laser_scan_3 = data
+    def _camera_depth_points_callback(self, data):
+        self.camera_depth_points = data
+        
+    def _camera_rgb_image_raw_callback(self, data):
+        self.camera_rgb_image_raw = data
+        
+    def _laser_scan_callback(self, data):
+        self.laser_scan = data
 
         
     def _check_publishers_connection(self):
@@ -233,32 +196,8 @@ class TurtleBot2Env(robot_gazebo_env.RobotGazeboEnv):
         :return:
         """
         rate = rospy.Rate(10)  # 10hz
-        while self._cmd_vel_pub_0.get_num_connections() == 0 and not rospy.is_shutdown():
-            rospy.logdebug("No susbribers to _cmd_vel_pub_0 yet so we wait and try again")
-            try:
-                rate.sleep()
-            except rospy.ROSInterruptException:
-                # This is to avoid error when world is rested, time when backwards.
-                pass
-
-        while self._cmd_vel_pub_1.get_num_connections() == 0 and not rospy.is_shutdown():
-            rospy.logdebug("No susbribers to _cmd_vel_pub_1 yet so we wait and try again")
-            try:
-                rate.sleep()
-            except rospy.ROSInterruptException:
-                # This is to avoid error when world is rested, time when backwards.
-                pass
-
-        while self._cmd_vel_pub_2.get_num_connections() == 0 and not rospy.is_shutdown():
-            rospy.logdebug("No susbribers to _cmd_vel_pub_2 yet so we wait and try again")
-            try:
-                rate.sleep()
-            except rospy.ROSInterruptException:
-                # This is to avoid error when world is rested, time when backwards.
-                pass
-
-        while self._cmd_vel_pub_3.get_num_connections() == 0 and not rospy.is_shutdown():
-            rospy.logdebug("No susbribers to _cmd_vel_pub_3 yet so we wait and try again")
+        while self._cmd_vel_pub.get_num_connections() == 0 and not rospy.is_shutdown():
+            rospy.logdebug("No susbribers to _cmd_vel_pub yet so we wait and try again")
             try:
                 rate.sleep()
             except rospy.ROSInterruptException:
