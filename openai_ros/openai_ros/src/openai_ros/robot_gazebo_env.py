@@ -4,7 +4,7 @@ from gym.utils import seeding
 from .gazebo_connection import GazeboConnection
 from .controllers_connection import ControllersConnection
 #https://bitbucket.org/theconstructcore/theconstruct_msgs/src/master/msg/RLExperimentInfo.msg
-from openai_ros.msg import RLExperimentInfo
+# from openai_ros.msg import RLExperimentInfo
 
 # https://github.com/openai/gym/blob/master/gym/core.py
 class RobotGazeboEnv(gym.Env):
@@ -13,6 +13,7 @@ class RobotGazeboEnv(gym.Env):
 
         # To reset Simulations
         rospy.logdebug("START init RobotGazeboEnv")
+        print("Robot environment is called ------------===============--------------")
         self.gazebo = GazeboConnection(start_init_physics_parameters,reset_world_or_sim)
         self.controllers_object = ControllersConnection(namespace=robot_name_space, controllers_list=controllers_list)
         self.reset_controls = reset_controls
@@ -21,7 +22,7 @@ class RobotGazeboEnv(gym.Env):
         # Set up ROS related variables
         self.episode_num = 0
         self.cumulated_episode_reward = 0
-        self.reward_pub = rospy.Publisher('/openai/reward', RLExperimentInfo, queue_size=1)
+        # self.reward_pub = rospy.Publisher('/openai/reward', RLExperimentInfo, queue_size=1)
         rospy.logdebug("END init RobotGazeboEnv")
 
     # Env methods
@@ -82,28 +83,28 @@ class RobotGazeboEnv(gym.Env):
         :return:
         """
         rospy.logdebug("PUBLISHING REWARD...")
-        self._publish_reward_topic(
-                                    self.cumulated_episode_reward,
-                                    self.episode_num
-                                    )
+        # self._publish_reward_topic(
+        #                             self.cumulated_episode_reward,
+        #                             self.episode_num
+        #                             )
         rospy.logdebug("PUBLISHING REWARD...DONE="+str(self.cumulated_episode_reward)+",EP="+str(self.episode_num))
 
         self.episode_num += 1
         self.cumulated_episode_reward = 0
 
 
-    def _publish_reward_topic(self, reward, episode_number=1):
-        """
-        This function publishes the given reward in the reward topic for
-        easy access from ROS infrastructure.
-        :param reward:
-        :param episode_number:
-        :return:
-        """
-        reward_msg = RLExperimentInfo()
-        reward_msg.episode_number = episode_number
-        reward_msg.episode_reward = reward
-        self.reward_pub.publish(reward_msg)
+    # def _publish_reward_topic(self, reward, episode_number=1):
+    #     """
+    #     This function publishes the given reward in the reward topic for
+    #     easy access from ROS infrastructure.
+    #     :param reward:
+    #     :param episode_number:
+    #     :return:
+    #     """
+    #     reward_msg = RLExperimentInfo()
+    #     reward_msg.episode_number = episode_number
+    #     reward_msg.episode_reward = reward
+    #     self.reward_pub.publish(reward_msg)
 
     # Extension methods
     # ----------------------------
