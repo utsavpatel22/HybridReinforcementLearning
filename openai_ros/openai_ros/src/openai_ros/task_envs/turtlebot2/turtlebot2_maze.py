@@ -14,18 +14,18 @@ timestep_limit_per_episode = 100 # Can be any Value
 register(
         id='TurtleBot2Maze-v0',
         entry_point='openai_ros.task_envs.turtlebot2.turtlebot2_maze:TurtleBot2MazeEnv',
-        timestep_limit=timestep_limit_per_episode,
+        max_episode_steps=timestep_limit_per_episode,
     )
 
 class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
-    def __init__(self):
+    def __init__(self, robot_number=1):
         """
         This Task Env is designed for having the TurtleBot2 in some kind of maze.
         It will learn how to move around the maze without crashing.
         """
         
         # Only variable needed to be set here
-        number_actions = rospy.get_param('/turtlebot2/n_actions')
+        number_actions = rospy.get_param('/turtlebot2/n_actions',3)
         self.action_space = spaces.Discrete(number_actions)
         
         # We set the reward range, which is not compulsory but here we do it.
@@ -47,20 +47,20 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         
         # Actions and Observations
         self.dec_obs = rospy.get_param("/turtlebot2/number_decimals_precision_obs", 1)
-        self.linear_forward_speed = rospy.get_param('/turtlebot2/linear_forward_speed')
-        self.linear_turn_speed = rospy.get_param('/turtlebot2/linear_turn_speed')
-        self.angular_speed = rospy.get_param('/turtlebot2/angular_speed')
-        self.init_linear_forward_speed = rospy.get_param('/turtlebot2/init_linear_forward_speed')
-        self.init_linear_turn_speed = rospy.get_param('/turtlebot2/init_linear_turn_speed')
+        self.linear_forward_speed = rospy.get_param('/turtlebot2/linear_forward_speed',1)
+        self.linear_turn_speed = rospy.get_param('/turtlebot2/linear_turn_speed',0.2)
+        self.angular_speed = rospy.get_param('/turtlebot2/angular_speed',0.1)
+        self.init_linear_forward_speed = rospy.get_param('/turtlebot2/init_linear_forward_speed',0.3)
+        self.init_linear_turn_speed = rospy.get_param('/turtlebot2/init_linear_turn_speed',0.4)
         
         
-        self.n_observations = rospy.get_param('/turtlebot2/n_observations')
-        self.min_range = rospy.get_param('/turtlebot2/min_range')
-        self.max_laser_value = rospy.get_param('/turtlebot2/max_laser_value')
-        self.min_laser_value = rospy.get_param('/turtlebot2/min_laser_value')
+        self.n_observations = rospy.get_param('/turtlebot2/n_observations',1)
+        self.min_range = rospy.get_param('/turtlebot2/min_range',0.5)
+        self.max_laser_value = rospy.get_param('/turtlebot2/max_laser_value',4)
+        self.min_laser_value = rospy.get_param('/turtlebot2/min_laser_value',0.05)
         
         # Here we will add any init functions prior to starting the MyRobotEnv
-        super(TurtleBot2MazeEnv, self).__init__()
+        super(TurtleBot2MazeEnv, self).__init__(robot_number=robot_number)
         
         # We create two arrays based on the binary values that will be assigned
         # In the discretization method.
@@ -91,13 +91,13 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         rospy.logdebug("OBSERVATION SPACES TYPE===>"+str(self.observation_space))
         
         # Rewards
-        self.forwards_reward = rospy.get_param("/turtlebot2/forwards_reward")
-        self.turn_reward = rospy.get_param("/turtlebot2/turn_reward")
-        self.end_episode_points = rospy.get_param("/turtlebot2/end_episode_points")
+        self.forwards_reward = rospy.get_param("/turtlebot2/forwards_reward",5)
+        self.turn_reward = rospy.get_param("/turtlebot2/turn_reward",100)
+        self.end_episode_points = rospy.get_param("/turtlebot2/end_episode_points",1000)
 
         self.cumulated_steps = 0.0
 
-        self.laser_filtered_pub = rospy.Publisher('/turtlebot2/laser/scan_filtered', LaserScan, queue_size=1)
+        self.laser_filtered_pub = rospy.Publisher('/turtlebot'+str(robot_number)+'/laser/scan_filtered', LaserScan, queue_size=1)
 
     def _set_init_pose(self):
         """Sets the Robot in its init pose
