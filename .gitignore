@@ -2,3 +2,5 @@ openai_ros/openai_ros/src/openai_ros/__pycache__/
 openai_ros/openai_ros/src/openai_ros/robot_envs/__pycache__/
 openai_ros/openai_ros/src/openai_ros/task_envs/__pycache__/
 openai_ros/openai_ros/src/openai_ros/task_envs/turtlebot2/__pycache__/
+hybrid_rl_training/src/*.ipynb*
+hybrid_rl_training/PPO2_turtlebot_tensorboard/
