@@ -9,7 +9,7 @@ from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Header
 
 # The path is __init__.py of openai_ros, where we import the TurtleBot2MazeEnv directly
-timestep_limit_per_episode = 100 # Can be any Value
+timestep_limit_per_episode = 1000 # Can be any Value
 
 register(
         id='TurtleBot2Maze-v0',
@@ -18,7 +18,7 @@ register(
     )
 
 class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
-    def __init__(self, robot_number=1):
+    def __init__(self, robot_number=0):
         """
         This Task Env is designed for having the TurtleBot2 in some kind of maze.
         It will learn how to move around the maze without crashing.
@@ -54,13 +54,16 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.init_linear_turn_speed = rospy.get_param('/turtlebot2/init_linear_turn_speed',0.4)
         
         
-        self.n_observations = rospy.get_param('/turtlebot2/n_observations',1)
+        self.n_observations = rospy.get_param('/turtlebot2/n_observations',128)
         self.min_range = rospy.get_param('/turtlebot2/min_range',0.5)
         self.max_laser_value = rospy.get_param('/turtlebot2/max_laser_value',4)
         self.min_laser_value = rospy.get_param('/turtlebot2/min_laser_value',0.05)
+
+        self.robot_number = robot_number
         
         # Here we will add any init functions prior to starting the MyRobotEnv
-        super(TurtleBot2MazeEnv, self).__init__(robot_number=robot_number)
+        self._get_init_pose()
+        super(TurtleBot2MazeEnv, self).__init__(robot_number=robot_number, initial_pose = self.initial_pose)
         
         # We create two arrays based on the binary values that will be assigned
         # In the discretization method.
@@ -75,6 +78,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         
         # Number of laser reading jumped
         self.new_ranges = int(math.ceil(float(len(laser_scan.ranges)) / float(self.n_observations)))
+
         
         rospy.logdebug("n_observations===>"+str(self.n_observations))
         rospy.logdebug("new_ranges, jumping laser readings===>"+str(self.new_ranges))
@@ -109,6 +113,46 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                         min_laser_distance=-1)
 
         return True
+
+    def _get_init_pose(self):
+        """ Gets the initial location of the robot to reset
+        """
+        self.initial_pose = {}
+        if (self.robot_number == 0):
+            self.initial_pose["x_init"] = -2.12
+            self.initial_pose["y_init"] = -0.11
+            self.initial_pose["x_rot_init"] = 0
+            self.initial_pose["y_rot_init"] = 0
+            self.initial_pose["z_rot_init"] = 0
+            self.initial_pose["w_rot_init"] = 1
+
+        elif (self.robot_number == 1):
+            self.initial_pose["x_init"] = 5.2737
+            self.initial_pose["y_init"] = 4.55
+            self.initial_pose["x_rot_init"] = 0
+            self.initial_pose["y_rot_init"] = 0
+            self.initial_pose["z_rot_init"] = 0.9999999
+            self.initial_pose["w_rot_init"] = 0.00000000796
+
+        elif(self.robot_number == 2):
+            self.initial_pose["x_init"] = 7.64
+            self.initial_pose["y_init"] = -12.22
+            self.initial_pose["x_rot_init"] = 0
+            self.initial_pose["y_rot_init"] = 0
+            self.initial_pose["z_rot_init"] = 0.7068
+            self.initial_pose["w_rot_init"] = 0.7073
+
+        elif(self.robot_number == 3):
+            self.initial_pose["x_init"] = -4.11
+            self.initial_pose["y_init"] = -5.78
+            self.initial_pose["x_rot_init"] = 0
+            self.initial_pose["y_rot_init"] = 0
+            self.initial_pose["z_rot_init"] = 0.7079
+            self.initial_pose["w_rot_init"] = -0.7079
+
+        return self.initial_pose
+
+
 
 
     def _init_env_variables(self):
@@ -174,16 +218,18 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         rospy.logdebug("Start Get Observation ==>")
         # We get the laser scan data
         laser_scan = self.get_laser_scan()
-        
+        print("The raw laser scan value {}".format(laser_scan))
         rospy.logdebug("BEFORE DISCRET _episode_done==>"+str(self._episode_done))
         
         discretized_observations = self.discretize_observation( laser_scan,
                                                                 self.new_ranges
                                                                 )
+        print("The discretized laser scan value {}".format(discretized_observations))
 
         rospy.logdebug("Observations==>"+str(discretized_observations))
         rospy.logdebug("AFTER DISCRET_episode_done==>"+str(self._episode_done))
         rospy.logdebug("END Get Observation ==>")
+        discretized_observations = numpy.asarray(discretized_observations)
         return discretized_observations
         
 
