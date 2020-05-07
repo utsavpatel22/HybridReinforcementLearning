@@ -16,7 +16,7 @@ class TurtleBot2Env(robot_gazebo_env.RobotGazeboEnv):
     """Superclass for all CubeSingleDisk environments.
     """
 
-    def __init__(self, robot_number):
+    def __init__(self, robot_number, initial_pose):
         """
         Initializes a new TurtleBot2Env environment.
         Turtlebot2 doesnt use controller_manager, therefore we wont reset the 
@@ -43,7 +43,7 @@ class TurtleBot2Env(robot_gazebo_env.RobotGazeboEnv):
         Args:
         """
         rospy.logdebug("Start TurtleBot2Env INIT...")
-        rospy.init_node('robot_env_' + str(robot_number), anonymous=True, log_level=rospy.WARN)
+        rospy.init_node('robot_env_' + str(robot_number), anonymous=True, log_level=rospy.ERROR)
         # Variables that we give through the constructor.
         # None in this case
 
@@ -59,7 +59,9 @@ class TurtleBot2Env(robot_gazebo_env.RobotGazeboEnv):
         super(TurtleBot2Env, self).__init__(controllers_list=self.controllers_list,
                                             robot_name_space=self.robot_name_space,
                                             reset_controls=False,
+                                            robot_number = robot_number,
                                             start_init_physics_parameters=False,
+                                            initial_pose = initial_pose,
                                             reset_world_or_sim="WORLD")
 
 

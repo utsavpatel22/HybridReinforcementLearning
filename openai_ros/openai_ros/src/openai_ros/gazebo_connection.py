@@ -3,19 +3,22 @@
 import rospy
 from std_srvs.srv import Empty
 from gazebo_msgs.msg import ODEPhysics
-from gazebo_msgs.srv import SetPhysicsProperties, SetPhysicsPropertiesRequest
+from gazebo_msgs.srv import SetPhysicsProperties, SetPhysicsPropertiesRequest, SetModelState, SetModelStateRequest
 from std_msgs.msg import Float64
 from geometry_msgs.msg import Vector3
 
 class GazeboConnection():
 
-    def __init__(self, start_init_physics_parameters, reset_world_or_sim, max_retry = 20):
+    def __init__(self, start_init_physics_parameters, robot_number, initial_pose, reset_world_or_sim, max_retry = 20):
 
         self._max_retry = max_retry
         self.unpause = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
         self.pause = rospy.ServiceProxy('/gazebo/pause_physics', Empty)
         self.reset_simulation_proxy = rospy.ServiceProxy('/gazebo/reset_simulation', Empty)
         self.reset_world_proxy = rospy.ServiceProxy('/gazebo/reset_world', Empty)
+        self.reset_robot = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
+        self.robot_number = robot_number
+        self.initial_pose = initial_pose
 
         # Setup the Gravity Controle system
         service_name = '/gazebo/set_physics_properties'
@@ -90,6 +93,9 @@ class GazeboConnection():
         elif self.reset_world_or_sim == "WORLD":
             rospy.logdebug("WORLD RESET")
             self.resetWorld()
+        elif self.reset_world_or_sim == "ROBOT":
+            rospy.logdebug("ROBOT RESET")
+            self.resetRobot()
         elif self.reset_world_or_sim == "NO_RESET_SIM":
             rospy.logdebug("NO RESET SIMULATION SELECTED")
         else:
@@ -108,6 +114,23 @@ class GazeboConnection():
             self.reset_world_proxy()
         except rospy.ServiceException as e:
             print ("/gazebo/reset_world service call failed")
+
+    def resetRobot(self):
+        robot_reset_request = SetModelStateRequest()
+        robot_reset_request.model_state.model_name = 'turtlebot' + str(self.robot_number)
+        robot_reset_request.model_state.pose.position.x = self.initial_pose["x_init"]
+        robot_reset_request.model_state.pose.position.y = self.initial_pose["y_init"]
+        robot_reset_request.model_state.pose.orientation.x = self.initial_pose["x_rot_init"]
+        robot_reset_request.model_state.pose.orientation.y = self.initial_pose["y_rot_init"]
+        robot_reset_request.model_state.pose.orientation.z = self.initial_pose["z_rot_init"]
+        robot_reset_request.model_state.pose.orientation.w = self.initial_pose["w_rot_init"]
+
+        rospy.wait_for_service('/gazebo/set_model_state')
+        try:
+            self.reset_robot(robot_reset_request)
+        except rospy.ServiceException as e:
+            print ("/gazebo/set_model_state service call failed")
+
 
     def init_values(self):
 

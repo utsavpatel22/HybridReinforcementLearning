@@ -9,14 +9,15 @@ from .controllers_connection import ControllersConnection
 # https://github.com/openai/gym/blob/master/gym/core.py
 class RobotGazeboEnv(gym.Env):
 
-    def __init__(self, robot_name_space, controllers_list, reset_controls, start_init_physics_parameters=True, reset_world_or_sim="SIMULATION"):
+    def __init__(self, robot_name_space, controllers_list, reset_controls, robot_number,  initial_pose, start_init_physics_parameters=True, reset_world_or_sim="SIMULATION"):
 
         # To reset Simulations
         rospy.logdebug("START init RobotGazeboEnv")
         print("Robot environment is called ------------===============--------------")
-        self.gazebo = GazeboConnection(start_init_physics_parameters,reset_world_or_sim)
+        self.gazebo = GazeboConnection(start_init_physics_parameters, robot_number, initial_pose = initial_pose, reset_world_or_sim="ROBOT")
         self.controllers_object = ControllersConnection(namespace=robot_name_space, controllers_list=controllers_list)
         self.reset_controls = reset_controls
+        self.robot_number = robot_number
         self.seed()
 
         # Set up ROS related variables
@@ -60,6 +61,7 @@ class RobotGazeboEnv(gym.Env):
 
     def reset(self):
         rospy.logdebug("Reseting RobotGazeboEnvironment")
+        print("Reset request for robot {}".format(self.robot_number))
         self._reset_sim()
         self._init_env_variables()
         self._update_episode()
@@ -142,6 +144,11 @@ class RobotGazeboEnv(gym.Env):
 
     def _set_init_pose(self):
         """Sets the Robot in its init pose
+        """
+        raise NotImplementedError()
+
+    def _get_init_pose(self):
+        """ Gets the initial location of the robot to reset
         """
         raise NotImplementedError()
 
