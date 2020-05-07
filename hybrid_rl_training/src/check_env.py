@@ -10,6 +10,6 @@ import rospy
 
 
 rospy.init_node('turtlebot_gym', anonymous=True, log_level=rospy.WARN)
-env = gym.make('turtlebot-v0')
+env = gym.make('TurtleBot2Maze-v0')
 check_env(env)
 
