@@ -25,7 +25,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         """
         
         # Only variable needed to be set here
-        number_actions = rospy.get_param('/turtlebot2/n_actions',3)
+        number_actions = rospy.get_param('/turtlebot2/n_actions',5)
         self.action_space = spaces.Discrete(number_actions)
         
         # We set the reward range, which is not compulsory but here we do it.
@@ -190,12 +190,20 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
             linear_speed = self.linear_forward_speed
             angular_speed = 0.0
             self.last_action = "FORWARDS"
-        elif action == 1: #LEFT
+        elif action == 1: #LEFT_FORWARD
             linear_speed = self.linear_turn_speed
             angular_speed = self.angular_speed
-            self.last_action = "TURN_LEFT"
-        elif action == 2: #RIGHT
+            self.last_action = "TURN_LEFT_FORWARD"
+        elif action == 2: #RIGHT_FORWARD
             linear_speed = self.linear_turn_speed
+            angular_speed = -1*self.angular_speed
+            self.last_action = "TURN_RIGHT_FORWARD"
+        elif action == 3: #LEFT
+            linear_speed = 0
+            angular_speed = self.angular_speed
+            self.last_action = "TURN_LEFT"
+        elif action == 4: #RIGHT
+            linear_speed = 0
             angular_speed = -1*self.angular_speed
             self.last_action = "TURN_RIGHT"
         
