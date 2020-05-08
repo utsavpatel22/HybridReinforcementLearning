@@ -67,7 +67,7 @@ class TurtleBot2Env(robot_gazebo_env.RobotGazeboEnv):
 
 
 
-        self.gazebo.unpauseSim()
+        # self.gazebo.unpauseSim()
         #self.controllers_object.reset_controllers()
         self._check_all_sensors_ready()
 
@@ -82,7 +82,7 @@ class TurtleBot2Env(robot_gazebo_env.RobotGazeboEnv):
 
         self._check_publishers_connection()
 
-        self.gazebo.pauseSim()
+        # self.gazebo.pauseSim()
         
         rospy.logdebug("Finished TurtleBot2Env INIT...")
 

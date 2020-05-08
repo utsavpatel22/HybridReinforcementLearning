@@ -46,9 +46,9 @@ class RobotGazeboEnv(gym.Env):
         """
         rospy.logdebug("START STEP OpenAIROS")
 
-        self.gazebo.unpauseSim()
+        # self.gazebo.unpauseSim()
         self._set_action(action)
-        self.gazebo.pauseSim()
+        # self.gazebo.pauseSim()
         obs = self._get_obs()
         done = self._is_done(obs)
         info = {}
@@ -117,27 +117,27 @@ class RobotGazeboEnv(gym.Env):
         rospy.logdebug("RESET SIM START")
         if self.reset_controls :
             rospy.logdebug("RESET CONTROLLERS")
-            self.gazebo.unpauseSim()
+            # self.gazebo.unpauseSim()
             self.controllers_object.reset_controllers()
             self._check_all_systems_ready()
             self._set_init_pose()
-            self.gazebo.pauseSim()
+            # self.gazebo.pauseSim()
             self.gazebo.resetSim()
-            self.gazebo.unpauseSim()
+            # self.gazebo.unpauseSim()
             self.controllers_object.reset_controllers()
             self._check_all_systems_ready()
-            self.gazebo.pauseSim()
+            # self.gazebo.pauseSim()
 
         else:
             rospy.logdebug("DONT RESET CONTROLLERS")
-            self.gazebo.unpauseSim()
+            # self.gazebo.unpauseSim()
             self._check_all_systems_ready()
             self._set_init_pose()
-            self.gazebo.pauseSim()
+            # self.gazebo.pauseSim()
             self.gazebo.resetSim()
-            self.gazebo.unpauseSim()
+            # self.gazebo.unpauseSim()
             self._check_all_systems_ready()
-            self.gazebo.pauseSim()
+            # self.gazebo.pauseSim()
 
         rospy.logdebug("RESET SIM END")
         return True
