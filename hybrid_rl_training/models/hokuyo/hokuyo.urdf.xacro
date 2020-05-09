@@ -12,7 +12,7 @@
       <visual>
         <origin xyz="0 0 0" rpy="0 0 0"/>
         <geometry>
-          <mesh filename="$(find naviswarm)/models/hokuyo/hokuyo.dae"/>
+          <mesh filename="$(find hybrid_rl_training)/models/hokuyo/hokuyo.dae"/>
         </geometry>
       </visual>
       <inertial>
