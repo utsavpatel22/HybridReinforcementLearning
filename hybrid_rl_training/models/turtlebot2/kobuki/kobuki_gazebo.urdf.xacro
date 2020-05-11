@@ -163,6 +163,19 @@
 	    </plugin>
 	  </gazebo>
 
+	  <gazebo>
+        <plugin name="p3d_base_controller" filename="libgazebo_ros_p3d.so">
+          <alwaysOn>true</alwaysOn>
+          <updateRate>50.0</updateRate>
+          <bodyName>base_link</bodyName>
+          <topicName>ground_truth/state</topicName>
+          <gaussianNoise>0.01</gaussianNoise>
+          <frameName>world</frameName>
+          <xyzOffset>0 0 0</xyzOffset>
+          <rpyOffset>0 0 0</rpyOffset>
+        </plugin>
+      </gazebo>
+
 	  <!--gazebo reference="base_link">
 	    <sensor name="bumper0_sensor" type="contact">
 	      <always_on>true</always_on>
