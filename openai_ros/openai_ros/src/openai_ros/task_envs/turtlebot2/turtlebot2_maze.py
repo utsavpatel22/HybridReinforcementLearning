@@ -7,6 +7,11 @@ from openai_ros.robot_envs import turtlebot2_env
 from gym.envs.registration import register
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Header
+from squaternion import Quaternion
+from openai_ros.task_envs.turtlebot2.config import Config
+from openai_ros.task_envs.turtlebot2.obstacles import Obstacles
+from openai_ros.task_envs.turtlebot2.dwa import DWA
+import time
 
 # The path is __init__.py of openai_ros, where we import the TurtleBot2MazeEnv directly
 timestep_limit_per_episode = 1000 # Can be any Value
@@ -25,7 +30,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         """
         
         # Only variable needed to be set here
-        number_actions = rospy.get_param('/turtlebot2/n_actions',5)
+        number_actions = rospy.get_param('/turtlebot2/n_actions',144)
         self.action_space = spaces.Discrete(number_actions)
         
         # We set the reward range, which is not compulsory but here we do it.
@@ -54,12 +59,16 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.init_linear_turn_speed = rospy.get_param('/turtlebot2/init_linear_turn_speed',0.4)
         
         
-        self.n_observations = rospy.get_param('/turtlebot2/n_observations',128)
+        self.n_laser_discretization = rospy.get_param('/turtlebot2/n_laser_discretization',128)
+        self.n_observations = rospy.get_param('/turtlebot2/n_observations',144)
         self.min_range = rospy.get_param('/turtlebot2/min_range',0.5)
-        self.max_laser_value = rospy.get_param('/turtlebot2/max_laser_value',4)
-        self.min_laser_value = rospy.get_param('/turtlebot2/min_laser_value',0.05)
+        self.max_cost = rospy.get_param('/turtlebot2/max_cost',1)
+        self.min_cost = rospy.get_param('/turtlebot2/min_cost',0)
 
         self.robot_number = robot_number
+        self._get_goal_location()
+
+
         
         # Here we will add any init functions prior to starting the MyRobotEnv
         self._get_init_pose()
@@ -77,15 +86,15 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         
         
         # Number of laser reading jumped
-        self.new_ranges = int(math.ceil(float(len(laser_scan.ranges)) / float(self.n_observations)))
+        self.new_ranges = int(math.ceil(float(len(laser_scan.ranges)) / float(self.n_laser_discretization)))
 
         
         rospy.logdebug("n_observations===>"+str(self.n_observations))
         rospy.logdebug("new_ranges, jumping laser readings===>"+str(self.new_ranges))
         
         
-        high = numpy.full((self.n_observations), self.max_laser_value)
-        low = numpy.full((self.n_observations), self.min_laser_value)
+        high = numpy.full((self.n_observations), self.max_cost)
+        low = numpy.full((self.n_observations), self.min_cost)
         
         # We only use two integers
         self.observation_space = spaces.Box(low, high)
@@ -96,12 +105,17 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         
         # Rewards
         self.forwards_reward = rospy.get_param("/turtlebot2/forwards_reward",5)
-        self.turn_reward = rospy.get_param("/turtlebot2/turn_reward",5)
+        self.invalid_penalty = rospy.get_param("/turtlebot2/invalid_penalty",20)
         self.end_episode_points = rospy.get_param("/turtlebot2/end_episode_points",1000)
+        self.goal_reaching_points = rospy.get_param("/turtlebot2/goal_reaching_points",500)
 
         self.cumulated_steps = 0.0
 
         self.laser_filtered_pub = rospy.Publisher('/turtlebot'+str(robot_number)+'/laser/scan_filtered', LaserScan, queue_size=1)
+
+        
+
+        
 
     def _set_init_pose(self):
         """Sets the Robot in its init pose
@@ -175,9 +189,15 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         elif(self.robot_number == 3):
            self.goal_pose["x"] = -4
            self.goal_pose["y"] = -11.5
+
+
+    def _get_distance2goal(self):
+        """ Gets the distance to the goal
+        """
+        return math.sqrt((self.goal_pose["x"] - self.odom_dict["x"])**2 + (self.goal_pose["y"] - self.odom_dict["y"])**2)
             
 
-        return self.goal_pose
+        
 
 
 
@@ -201,6 +221,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         # TODO: Add reset of published filtered laser readings
         laser_scan = self.get_laser_scan()
         discretized_ranges = laser_scan.ranges
+        init_obs = self._get_obs()
+        self.previous_distance2goal = self._get_distance2goal()
         self.publish_filtered_laser_scan(   laser_original_data=laser_scan,
                                          new_filtered_laser_range=discretized_ranges)
 
@@ -214,26 +236,15 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         
         rospy.logdebug("Start Set Action ==>"+str(action))
         # We convert the actions to speed movements to send to the parent class CubeSingleDiskEnv
-        if action == 0: #FORWARD
-            linear_speed = self.linear_forward_speed
-            angular_speed = 0.0
-            self.last_action = "FORWARDS"
-        elif action == 1: #LEFT_FORWARD
-            linear_speed = self.linear_turn_speed
-            angular_speed = self.angular_speed
-            self.last_action = "TURN_LEFT_FORWARD"
-        elif action == 2: #RIGHT_FORWARD
-            linear_speed = self.linear_turn_speed
-            angular_speed = -1*self.angular_speed
-            self.last_action = "TURN_RIGHT_FORWARD"
-        elif action == 3: #LEFT
+        if (self.cost_list[action] < 0.8):
+            linear_speed = self.v_list[action]
+            angular_speed = self.w_list[action]
+            self.last_action = "VALID"
+
+        else:
             linear_speed = 0
-            angular_speed = self.angular_speed
-            self.last_action = "TURN_LEFT"
-        elif action == 4: #RIGHT
-            linear_speed = 0
-            angular_speed = -1*self.angular_speed
-            self.last_action = "TURN_RIGHT"
+            angular_speed = 0
+            self.last_action = "INVALID"
         
         # We tell TurtleBot2 the linear and angular speed to set to execute
         self.move_base( linear_speed,
@@ -254,40 +265,83 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         rospy.logdebug("Start Get Observation ==>")
         # We get the laser scan data
         laser_scan = self.get_laser_scan()
-        print("The raw laser scan value {}".format(laser_scan))
         rospy.logdebug("BEFORE DISCRET _episode_done==>"+str(self._episode_done))
         
         discretized_observations = self.discretize_observation( laser_scan,
                                                                 self.new_ranges
                                                                 )
-        print("The discretized laser scan value {}".format(discretized_observations))
+
 
         rospy.logdebug("Observations==>"+str(discretized_observations))
         rospy.logdebug("AFTER DISCRET_episode_done==>"+str(self._episode_done))
         rospy.logdebug("END Get Observation ==>")
         discretized_observations = numpy.asarray(discretized_observations)
-        return discretized_observations
+
+        # New code for getting observations based on DWA
+        odom_data = self.get_odom()
+        self.odom_dict = {}
+        self._reached_goal = False
+        q = Quaternion(odom_data.pose.pose.orientation.w,odom_data.pose.pose.orientation.x,odom_data.pose.pose.orientation.y,odom_data.pose.pose.orientation.z)
+        e = q.to_euler(degrees=False)
+        self.odom_dict["x"] = odom_data.pose.pose.position.x
+        self.odom_dict["y"] = odom_data.pose.pose.position.y
+        self.odom_dict["theta"] = e[2]
+        self.odom_dict["u"] = odom_data.twist.twist.linear.x
+        self.odom_dict["omega"] = odom_data.twist.twist.angular.z
+        start_t = time.time()
+        cnfg = Config(self.odom_dict, self.goal_pose)
+        obs = Obstacles(laser_scan.ranges, cnfg)
+        self.v_list, self.w_list, self.cost_list = DWA(cnfg, obs)
+        end_t = time.time()
+
+        # print("The time for robot {} ----------------------------------is {}".format(self.robot_number, end_t - start_t))
+
+        self.current_distance2goal = self._get_distance2goal()
+        if (self.current_distance2goal < 0.5):
+            self._episode_done = True
+            self._reached_goal = True
+
+
+
+
+
+        # return discretized_observations
+        return self.cost_list
         
 
     def _is_done(self, observations):
         
-        if self._episode_done:
+        if self._episode_done and (not self._reached_goal):
             rospy.logdebug("TurtleBot2 is Too Close to wall==>"+str(self._episode_done))
+            
+
+        elif self._episode_done and self._reached_goal:
+            rospy.logdebug("Robot {} reached the goal".format(self.robot_number))
+            
         else:
-            rospy.logerr("TurtleBot2 is Ok ==>")
+            rospy.logdebug("TurtleBot2 is Ok ==>")
 
         return self._episode_done
 
     def _compute_reward(self, observations, done):
 
-        if not done:
-            if self.last_action == "FORWARDS":
-                reward = self.forwards_reward
-            else:
-                reward = self.turn_reward
-        else:
-            reward = -1*self.end_episode_points
+        reward = 0
 
+
+        reward += 150*(self.previous_distance2goal - self.current_distance2goal)
+
+        self.previous_distance2goal = self.current_distance2goal
+
+        if not done:
+            if self.last_action == "VALID":
+                reward += self.forwards_reward
+            else:
+                reward += -self.invalid_penalty
+        elif self._episode_done and (not self._reached_goal):
+            reward += -1*self.end_episode_points
+
+        elif self._episode_done and self._reached_goal:
+            reward += self.goal_reaching_points
 
         rospy.logdebug("reward=" + str(reward))
         self.cumulated_reward += reward
