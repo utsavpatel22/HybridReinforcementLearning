@@ -72,7 +72,7 @@ class TurtleBot2Env(robot_gazebo_env.RobotGazeboEnv):
         self._check_all_sensors_ready()
 
         # We Start all the ROS related Subscribers and publishers
-        rospy.Subscriber("/turtlebot"+str(self.robot_number)+"/odom", Odometry, self._odom_callback)
+        rospy.Subscriber("/turtlebot"+str(self.robot_number)+"/ground_truth/state", Odometry, self._odom_callback)
         #rospy.Subscriber("/camera/depth/image_raw", Image, self._camera_depth_image_raw_callback)
         #rospy.Subscriber("/camera/depth/points", PointCloud2, self._camera_depth_points_callback)
         #rospy.Subscriber("/camera/rgb/image_raw", Image, self._camera_rgb_image_raw_callback)
@@ -114,14 +114,14 @@ class TurtleBot2Env(robot_gazebo_env.RobotGazeboEnv):
 
     def _check_odom_ready(self):
         self.odom = None
-        rospy.logdebug("Waiting for "+"/turtlebot"+str(self.robot_number)+ "/odom to be READY...")
+        rospy.logdebug("Waiting for "+"/turtlebot"+str(self.robot_number)+ "/ground_truth/state to be READY...")
         while self.odom is None and not rospy.is_shutdown():
             try:
-                self.odom = rospy.wait_for_message("/turtlebot"+str(self.robot_number)+"/odom", Odometry, timeout=5.0)
-                rospy.logdebug("Current"+"/turtlebot"+ str(self.robot_number)+ "/odom READY=>")
+                self.odom = rospy.wait_for_message("/turtlebot"+str(self.robot_number)+"/ground_truth/state", Odometry, timeout=5.0)
+                rospy.logdebug("Current"+"/turtlebot"+ str(self.robot_number)+ "/ground_truth/state READY=>")
 
             except:
-                rospy.logerr("Current" +"/turtlebot"+ str(self.robot_number)+  "/odom not ready yet, retrying for getting odom")
+                rospy.logerr("Current" +"/turtlebot"+ str(self.robot_number)+  "/ground_truth/state not ready yet, retrying for getting odom")
 
         return self.odom
         
