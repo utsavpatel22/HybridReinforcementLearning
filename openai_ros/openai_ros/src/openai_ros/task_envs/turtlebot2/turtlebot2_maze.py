@@ -153,6 +153,34 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         return self.initial_pose
 
 
+    def _get_goal_location(self):
+        """ Gets the goal location for each robot
+        """
+        self.goal_pose = {}
+        if (self.robot_number == 0):
+           self.goal_pose["x"] = 8
+           self.goal_pose["y"] = 2.5
+            
+
+        elif (self.robot_number == 1):
+           self.goal_pose["x"] = -1
+           self.goal_pose["y"] = 7
+            
+
+        elif(self.robot_number == 2):
+           self.goal_pose["x"] = 5.5
+           self.goal_pose["y"] = -7.5
+            
+
+        elif(self.robot_number == 3):
+           self.goal_pose["x"] = -4
+           self.goal_pose["y"] = -11.5
+            
+
+        return self.goal_pose
+
+
+
 
 
     def _init_env_variables(self):
