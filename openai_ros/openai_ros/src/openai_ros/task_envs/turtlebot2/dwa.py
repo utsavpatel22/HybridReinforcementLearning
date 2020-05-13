@@ -61,10 +61,11 @@ def calc_final_input(x, u, dw, config, ob):
     v_list = []
     w_list = []
     cost_list = []
-
+    v_reso = (dw[1] - dw[0]) / 12
+    yawrate_reso = (dw[3] - dw[2]) / 12
     # evaluate all trajectory with sampled input in dynamic window
-    for v in np.arange(dw[0], dw[1], config.v_reso):
-        for w in np.arange(dw[2], dw[3], config.yawrate_reso):
+    for v in np.arange(dw[0], dw[1], v_reso):
+        for w in np.arange(dw[2], dw[3], yawrate_reso):
             traj = calc_trajectory(xinit, v, w, config)
 
             # calc costs with weighted gains
