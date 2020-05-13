@@ -15,8 +15,8 @@ import os
 class CustomPolicy(FeedForwardPolicy):
     def __init__(self, *args, **kwargs):
         super(CustomPolicy, self).__init__(*args, **kwargs,
-                                           net_arch=[dict(pi=[128, 128, 128],
-                                                          vf=[128, 128, 128])],
+                                           net_arch=[dict(pi=[144, 144, 144],
+                                                          vf=[144, 144, 144])],
                                            feature_extraction="mlp")
 
 if __name__ == '__main__':
