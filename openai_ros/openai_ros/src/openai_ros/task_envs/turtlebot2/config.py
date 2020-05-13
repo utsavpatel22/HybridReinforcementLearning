@@ -12,8 +12,6 @@ class Config():
         self.max_yawrate = 1.0  # [rad/s]
         self.max_accel = 2.5  # [m/ss]
         self.max_dyawrate = 3.2  # [rad/ss]
-        self.v_reso = 0.15  # [m/s]
-        self.yawrate_reso = 0.05  # [rad/s]
         self.dt = 0.5  # [s]
         self.predict_time = 1.5  # [s]
         self.to_goal_cost_gain = 2.4 #lower = detour
