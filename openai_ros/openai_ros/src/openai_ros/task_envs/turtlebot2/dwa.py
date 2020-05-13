@@ -79,8 +79,11 @@ def calc_final_input(x, u, dw, config, ob):
             v_list.append(v)
             w_list.append(w)
             cost_list.append(final_cost)
+    cost_list = np.asarray(cost_list)
+    max_cost = np.max(cost_list)
+    cost_list_normalized = cost_list / max_cost
 
-    return v_list, w_list, cost_list
+    return v_list, w_list, cost_list_normalized
 
 # Calculate obstacle cost inf: collision, 0:free
 def calc_obstacle_cost(traj, ob, config):
@@ -99,7 +102,7 @@ def calc_obstacle_cost(traj, ob, config):
             r = math.sqrt(dx**2 + dy**2)
 
             if r <= config.robot_radius:
-                return float("Inf")  # collision
+                return 40  # collision
 
             if minr >= r:
                 minr = r
