@@ -236,15 +236,10 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         
         rospy.logdebug("Start Set Action ==>"+str(action))
         # We convert the actions to speed movements to send to the parent class CubeSingleDiskEnv
-        if (self.cost_list[action] < 0.8):
-            linear_speed = self.v_list[action]
-            angular_speed = self.w_list[action]
-            self.last_action = "VALID"
-
-        else:
-            linear_speed = 0
-            angular_speed = 0
-            self.last_action = "INVALID"
+        
+        linear_speed = self.v_list[action]
+        angular_speed = self.w_list[action]
+        self.last_action = "VALID"
         
         # We tell TurtleBot2 the linear and angular speed to set to execute
         self.move_base( linear_speed,
@@ -332,12 +327,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
 
         self.previous_distance2goal = self.current_distance2goal
 
-        if not done:
-            if self.last_action == "VALID":
-                reward += self.forwards_reward
-            else:
-                reward += -self.invalid_penalty
-        elif self._episode_done and (not self._reached_goal):
+        
+        if self._episode_done and (not self._reached_goal):
             reward += -1*self.end_episode_points
 
         elif self._episode_done and self._reached_goal:
