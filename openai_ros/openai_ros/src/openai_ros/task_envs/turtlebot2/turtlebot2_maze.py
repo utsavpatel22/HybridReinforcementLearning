@@ -323,7 +323,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         reward = 0
 
 
-        reward += 150*(self.previous_distance2goal - self.current_distance2goal)
+        reward += 200*(self.previous_distance2goal - self.current_distance2goal)
 
         self.previous_distance2goal = self.current_distance2goal
 
