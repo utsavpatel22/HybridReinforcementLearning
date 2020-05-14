@@ -79,6 +79,10 @@ def calc_final_input(x, u, dw, config, ob):
             v_list.append(v)
             w_list.append(w)
             cost_list.append(final_cost)
+    
+
+    cost_list, v_list, w_list = zip(*sorted(zip(cost_list, v_list, w_list)))
+
     cost_list = np.asarray(cost_list)
     max_cost = np.max(cost_list)
     cost_list_normalized = cost_list / max_cost
