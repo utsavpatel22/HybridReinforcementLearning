@@ -239,7 +239,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         
         linear_speed = self.v_list[action]
         angular_speed = self.w_list[action]
-        self.last_action = "VALID"
+        self.last_action = linear_speed
         
         # We tell TurtleBot2 the linear and angular speed to set to execute
         self.move_base( linear_speed,
@@ -326,6 +326,9 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         reward += 200*(self.previous_distance2goal - self.current_distance2goal)
 
         self.previous_distance2goal = self.current_distance2goal
+
+        if self.last_action != 0:
+            reward += self.forwards_reward
 
         
         if self._episode_done and (not self._reached_goal):
