@@ -11,3 +11,6 @@ Package that combines reinforcement learning with Dynamic Window Approach
 3) In the 3rd iteration, I am sorting the DWA costs so that the network will have a structured input. This training also did not converge. 
 
 4) Now rewarding the robot for going towards goal, executing velocity with linear component. and penalizing for colliding with something. 
+
+
+------------------------------------ Now using stacked frames----------------------------------------------------------
