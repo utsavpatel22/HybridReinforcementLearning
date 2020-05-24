@@ -64,6 +64,13 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.min_range = rospy.get_param('/turtlebot2/min_range',0.5)
         self.max_cost = rospy.get_param('/turtlebot2/max_cost',1)
         self.min_cost = rospy.get_param('/turtlebot2/min_cost',0)
+        self.n_stacked_frames = rospy.get_param('/turtlebot2/n_stacked_frames',5)
+
+        self.max_linear_speed = rospy.get_param('/turtlebot2/max_linear_speed',0.65)
+        self.max_angular_speed = rospy.get_param('/turtlebot2/max_angular_speed',1)
+
+        self.min_linear_speed = rospy.get_param('/turtlebot2/min_linear_speed',0)
+        self.min_angular_speed = rospy.get_param('/turtlebot2/min_angular_speed',0)
 
         self.robot_number = robot_number
         self._get_goal_location()
@@ -93,12 +100,24 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         rospy.logdebug("new_ranges, jumping laser readings===>"+str(self.new_ranges))
         
         
-        high = numpy.full((self.n_observations), self.max_cost)
-        low = numpy.full((self.n_observations), self.min_cost)
+        # high = numpy.full((self.n_observations), self.max_cost)
+        # low = numpy.full((self.n_observations), self.min_cost)
         
-        # We only use two integers
+        # # We only use two integers
+        # self.observation_space = spaces.Box(low, high)
+
+        v_list_high = numpy.full((self.n_observations,self.n_stacked_frames),self.max_linear_speed)
+        w_list_high = numpy.full((self.n_observations,self.n_stacked_frames),self.max_angular_speed)
+        cost_list_high = numpy.full((self.n_observations,self.n_stacked_frames),1)
+
+        v_list_low = numpy.full((self.n_observations,self.n_stacked_frames),self.min_linear_speed)
+        w_list_low = numpy.full((self.n_observations,self.n_stacked_frames),self.min_angular_speed)
+        cost_list_low = numpy.full((self.n_observations,self.n_stacked_frames),0)
+        
+        high = numpy.stack((v_list_high, w_list_high, cost_list_high), axis=2)
+        low = numpy.stack((v_list_low, w_list_low, cost_list_low), axis=2)
+
         self.observation_space = spaces.Box(low, high)
-        
         
         rospy.logdebug("ACTION SPACES TYPE===>"+str(self.action_space))
         rospy.logdebug("OBSERVATION SPACES TYPE===>"+str(self.observation_space))
@@ -221,7 +240,35 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         # TODO: Add reset of published filtered laser readings
         laser_scan = self.get_laser_scan()
         discretized_ranges = laser_scan.ranges
+
+        odom_data_init = self.get_odom()
+        odom_dict_init = {}
+        q = Quaternion(odom_data_init.pose.pose.orientation.w,odom_data_init.pose.pose.orientation.x,odom_data_init.pose.pose.orientation.y,odom_data_init.pose.pose.orientation.z)
+        e = q.to_euler(degrees=False)
+        odom_dict_init["x"] = odom_data_init.pose.pose.position.x
+        odom_dict_init["y"] = odom_data_init.pose.pose.position.y
+        odom_dict_init["theta"] = e[2]
+        odom_dict_init["u"] = odom_data_init.twist.twist.linear.x
+        odom_dict_init["omega"] = odom_data_init.twist.twist.angular.z
+        cnfg = Config(odom_dict_init, self.goal_pose)
+        obs_init = Obstacles(laser_scan.ranges, cnfg)
+        v_list_init, w_list_init, cost_list_init = DWA(cnfg, obs_init)
+
+        self.v_list_stacked = numpy.zeros((self.n_observations,self.n_stacked_frames), dtype=numpy.float64)
+        self.w_list_stacked = numpy.zeros((self.n_observations,self.n_stacked_frames), dtype=numpy.float64)
+        self.cost_list_stacked = numpy.zeros((self.n_observations,self.n_stacked_frames), dtype=numpy.float64)
+        self.obs_list_stacked = []
+
+        for i in range(0, self.n_stacked_frames):
+            self.v_list_stacked[:,i] = v_list_init
+            self.w_list_stacked[:,i] = w_list_init
+            self.cost_list_stacked[:,i] = cost_list_init
+            self.obs_list_stacked.append(obs_init)
+
         init_obs = self._get_obs()
+
+        
+
         self.previous_distance2goal = self._get_distance2goal()
         self.publish_filtered_laser_scan(   laser_original_data=laser_scan,
                                          new_filtered_laser_range=discretized_ranges)
@@ -283,10 +330,33 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.odom_dict["theta"] = e[2]
         self.odom_dict["u"] = odom_data.twist.twist.linear.x
         self.odom_dict["omega"] = odom_data.twist.twist.angular.z
-        start_t = time.time()
         cnfg = Config(self.odom_dict, self.goal_pose)
-        obs = Obstacles(laser_scan.ranges, cnfg)
-        self.v_list, self.w_list, self.cost_list = DWA(cnfg, obs)
+        self.obs = Obstacles(laser_scan.ranges, cnfg)
+
+        del self.obs_list_stacked[0]
+        self.obs_list_stacked.append(self.obs)
+
+        for j in range(0, self.n_stacked_frames):
+            self.v_list_stacked = numpy.delete(self.v_list_stacked, 0, axis = 1)
+            self.w_list_stacked = numpy.delete(self.w_list_stacked, 0, axis = 1)
+            self.cost_list_stacked = numpy.delete(self.cost_list_stacked, 0, axis = 1)
+            print(j)
+
+            self.v_list, self.w_list, self.cost_list = DWA(cnfg, self.obs_list_stacked[j])
+            self.v_list = self.v_list[:, numpy.newaxis]
+            self.w_list = self.w_list[:, numpy.newaxis]
+            self.cost_list = self.cost_list[:, numpy.newaxis]
+            print("The v list is {}=========================".format((self.v_list)))
+
+            print("The v list stacked  is {}=========================".format((self.v_list_stacked)))
+            
+            self.v_list_stacked = numpy.append(self.v_list_stacked, self.v_list, axis = 1)
+            self.w_list_stacked = numpy.append(self.w_list_stacked, self.w_list, axis = 1)
+            self.cost_list_stacked = numpy.append(self.cost_list_stacked, self.cost_list, axis = 1)
+
+
+        self.stacked_obs = numpy.stack((self.v_list_stacked,self.w_list_stacked,self.cost_list_stacked), axis=2)
+        print("The shape of stacked frames is-------------------------------------------------- {}".format(self.stacked_obs.shape))
         end_t = time.time()
 
         # print("The time for robot {} ----------------------------------is {}".format(self.robot_number, end_t - start_t))
@@ -296,12 +366,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
             self._episode_done = True
             self._reached_goal = True
 
-
-
-
-
-        # return discretized_observations
-        return self.cost_list
+        
+        return self.stacked_obs
         
 
     def _is_done(self, observations):
