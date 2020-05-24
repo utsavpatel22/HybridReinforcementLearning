@@ -87,7 +87,7 @@ def calc_final_input(x, u, dw, config, ob):
     max_cost = np.max(cost_list)
     cost_list_normalized = cost_list / max_cost
 
-    return v_list, w_list, cost_list_normalized
+    return np.asarray(v_list), np.asarray(w_list), cost_list_normalized
 
 # Calculate obstacle cost inf: collision, 0:free
 def calc_obstacle_cost(traj, ob, config):
