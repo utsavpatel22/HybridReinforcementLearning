@@ -12,7 +12,7 @@ from openai_ros.task_envs.turtlebot2.config import Config
 from openai_ros.task_envs.turtlebot2.obstacles import Obstacles
 from openai_ros.task_envs.turtlebot2.dwa import DWA
 from openai_ros.gazebo_connection import GazeboConnection
-import time
+
 
 # The path is __init__.py of openai_ros, where we import the TurtleBot2MazeEnv directly
 timestep_limit_per_episode = 1000 # Can be any Value
@@ -24,13 +24,14 @@ register(
     )
 
 class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
-    def __init__(self, robot_number=0):
+    def __init__(self, world_file_name, robot_number=0):
         """
         This Task Env is designed for having the TurtleBot2 in some kind of maze.
         It will learn how to move around the maze without crashing.
         """
         
         # Only variable needed to be set here
+        self.world_file_name = world_file_name
         number_actions = rospy.get_param('/turtlebot2/n_actions',144)
         self.action_space = spaces.Discrete(number_actions)
         
@@ -154,37 +155,48 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         """ Gets the initial location of the robot to reset
         """
         self.initial_pose = {}
-        if (self.robot_number == 0):
-            self.initial_pose["x_init"] = -2.12
-            self.initial_pose["y_init"] = -0.11
+        if (self.world_file_name == "maze"):
+
+            if (self.robot_number == 0):
+                self.initial_pose["x_init"] = -2.12
+                self.initial_pose["y_init"] = -0.11
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0
+                self.initial_pose["w_rot_init"] = 1
+
+            elif (self.robot_number == 1):
+                self.initial_pose["x_init"] = 5.2737
+                self.initial_pose["y_init"] = 4.55
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0.9999999
+                self.initial_pose["w_rot_init"] = 0.00000000796
+
+            elif(self.robot_number == 2):
+                self.initial_pose["x_init"] = 7.64
+                self.initial_pose["y_init"] = -12.22
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0.7068
+                self.initial_pose["w_rot_init"] = 0.7073
+
+            elif(self.robot_number == 3):
+                self.initial_pose["x_init"] = -4.11
+                self.initial_pose["y_init"] = -5.78
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0.7079
+                self.initial_pose["w_rot_init"] = -0.7079
+
+        elif(self.world_file_name == "zigzag_3ped"):
+
+            self.initial_pose["x_init"] = 1
+            self.initial_pose["y_init"] = 0
             self.initial_pose["x_rot_init"] = 0
             self.initial_pose["y_rot_init"] = 0
             self.initial_pose["z_rot_init"] = 0
             self.initial_pose["w_rot_init"] = 1
-
-        elif (self.robot_number == 1):
-            self.initial_pose["x_init"] = 5.2737
-            self.initial_pose["y_init"] = 4.55
-            self.initial_pose["x_rot_init"] = 0
-            self.initial_pose["y_rot_init"] = 0
-            self.initial_pose["z_rot_init"] = 0.9999999
-            self.initial_pose["w_rot_init"] = 0.00000000796
-
-        elif(self.robot_number == 2):
-            self.initial_pose["x_init"] = 7.64
-            self.initial_pose["y_init"] = -12.22
-            self.initial_pose["x_rot_init"] = 0
-            self.initial_pose["y_rot_init"] = 0
-            self.initial_pose["z_rot_init"] = 0.7068
-            self.initial_pose["w_rot_init"] = 0.7073
-
-        elif(self.robot_number == 3):
-            self.initial_pose["x_init"] = -4.11
-            self.initial_pose["y_init"] = -5.78
-            self.initial_pose["x_rot_init"] = 0
-            self.initial_pose["y_rot_init"] = 0
-            self.initial_pose["z_rot_init"] = 0.7079
-            self.initial_pose["w_rot_init"] = -0.7079
 
         return self.initial_pose
 
@@ -193,24 +205,29 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         """ Gets the goal location for each robot
         """
         self.goal_pose = {}
-        if (self.robot_number == 0):
-           self.goal_pose["x"] = 8
-           self.goal_pose["y"] = 2.5
+        if(self.world_file_name == "maze"):
+            if (self.robot_number == 0):
+               self.goal_pose["x"] = 8
+               self.goal_pose["y"] = 2.5
             
 
-        elif (self.robot_number == 1):
-           self.goal_pose["x"] = -1
-           self.goal_pose["y"] = 7
+            elif (self.robot_number == 1):
+               self.goal_pose["x"] = -1
+               self.goal_pose["y"] = 7
             
 
-        elif(self.robot_number == 2):
-           self.goal_pose["x"] = 5.5
-           self.goal_pose["y"] = -7.5
+            elif(self.robot_number == 2):
+               self.goal_pose["x"] = 5.5
+               self.goal_pose["y"] = -7.5
             
 
-        elif(self.robot_number == 3):
-           self.goal_pose["x"] = -4
-           self.goal_pose["y"] = -11.5
+            elif(self.robot_number == 3):
+               self.goal_pose["x"] = -4
+               self.goal_pose["y"] = -11.5
+
+        elif(self.world_file_name == "zigzag_3ped"):
+           self.goal_pose["x"] = 12.5
+           self.goal_pose["y"] = 0
 
 
     def _get_distance2goal(self):
