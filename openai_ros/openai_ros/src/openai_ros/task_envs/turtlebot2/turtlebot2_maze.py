@@ -11,6 +11,7 @@ from squaternion import Quaternion
 from openai_ros.task_envs.turtlebot2.config import Config
 from openai_ros.task_envs.turtlebot2.obstacles import Obstacles
 from openai_ros.task_envs.turtlebot2.dwa import DWA
+from openai_ros.gazebo_connection import GazeboConnection
 import time
 
 # The path is __init__.py of openai_ros, where we import the TurtleBot2MazeEnv directly
@@ -80,6 +81,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         # Here we will add any init functions prior to starting the MyRobotEnv
         self._get_init_pose()
         super(TurtleBot2MazeEnv, self).__init__(robot_number=robot_number, initial_pose = self.initial_pose)
+
+        self.gazebo = GazeboConnection(start_init_physics_parameters= True, robot_number = self.robot_number , initial_pose = self.initial_pose, reset_world_or_sim="ROBOT")
         
         # We create two arrays based on the binary values that will be assigned
         # In the discretization method.
@@ -333,6 +336,11 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         cnfg = Config(self.odom_dict, self.goal_pose)
         self.obs = Obstacles(laser_scan.ranges, cnfg)
 
+        # Pausing the simulator if only one robot is used
+
+        if (self.robot_number == 0):
+        	self.gazebo.pauseSim()
+
         del self.obs_list_stacked[0]
         self.obs_list_stacked.append(self.obs)
 
@@ -346,9 +354,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
             self.v_list = self.v_list[:, numpy.newaxis]
             self.w_list = self.w_list[:, numpy.newaxis]
             self.cost_list = self.cost_list[:, numpy.newaxis]
-            print("The v list is {}=========================".format((self.v_list)))
-
-            print("The v list stacked  is {}=========================".format((self.v_list_stacked)))
+            
             
             self.v_list_stacked = numpy.append(self.v_list_stacked, self.v_list, axis = 1)
             self.w_list_stacked = numpy.append(self.w_list_stacked, self.w_list, axis = 1)
@@ -358,6 +364,9 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.stacked_obs = numpy.stack((self.v_list_stacked,self.w_list_stacked,self.cost_list_stacked), axis=2)
         print("The shape of stacked frames is-------------------------------------------------- {}".format(self.stacked_obs.shape))
         end_t = time.time()
+
+        if (self.robot_number == 0):
+        	self.gazebo.unpause()
 
         # print("The time for robot {} ----------------------------------is {}".format(self.robot_number, end_t - start_t))
 
