@@ -13,7 +13,6 @@ class RobotGazeboEnv(gym.Env):
 
         # To reset Simulations
         rospy.logdebug("START init RobotGazeboEnv")
-        print("Robot environment is called ------------===============--------------")
         self.gazebo = GazeboConnection(start_init_physics_parameters, robot_number, initial_pose = initial_pose, reset_world_or_sim="ROBOT")
         self.controllers_object = ControllersConnection(namespace=robot_name_space, controllers_list=controllers_list)
         self.reset_controls = reset_controls
