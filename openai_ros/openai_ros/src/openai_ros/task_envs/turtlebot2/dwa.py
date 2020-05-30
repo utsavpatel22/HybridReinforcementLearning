@@ -113,6 +113,26 @@ def calc_obstacle_cost(traj, ob, config):
 
     return 1.0 / minr
 
+# Calculates obstacle cost in more efficient way (in terms of big O). It uses obstacle vector instead of using a for loop. 
+def calc_obs_cost_bigO_efficient(traj, ob, config):
+    skip_n = 2
+    ob = np.asarray(list(ob))
+    minr = float("inf")
+
+    for ii in range(0, len(traj[:, 1]), skip_n):
+        trajxy = np.array([traj[ii, 0], traj[ii, 1]])
+        square_dxy = np.square(ob - trajxy)
+        p_dist = np.sqrt(np.sum(square_dxy, axis = 1))
+        r_min = np.amin(p_dist)
+
+        if r_min <= config.robot_radius:
+            return 40 # collision
+
+        if minr >= r_min:
+            minr = r_min
+
+    return 1.0 / minr
+
 # Calculate goal cost via Pythagorean distance to robot
 def calc_to_goal_cost(traj, config):
     # If-Statements to determine negative vs positive goal/trajectory position

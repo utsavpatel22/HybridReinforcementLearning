@@ -6,3 +6,4 @@ hybrid_rl_training/src/*.ipynb*
 hybrid_rl_training/PPO2_turtlebot_tensorboard/
 openai_ros/openai_ros/src/openai_ros/task_envs/turtlebot2/*.ipynb*
 hybrid_rl_training/src/__pycache__/
+.ipynb*
