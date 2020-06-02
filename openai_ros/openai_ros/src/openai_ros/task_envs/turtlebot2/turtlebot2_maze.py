@@ -272,23 +272,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         odom_dict_init["omega"] = odom_data_init.twist.twist.angular.z
         cnfg = Config(odom_dict_init, self.goal_pose)
         obs_init = Obstacles(laser_scan.ranges, cnfg)
-        v_list_init, w_list_init, cost_list_init = DWA(cnfg, obs_init)
-
-        self.v_list_stacked = numpy.zeros((self.n_observations,self.n_stacked_frames), dtype=numpy.float64)
-        self.w_list_stacked = numpy.zeros((self.n_observations,self.n_stacked_frames), dtype=numpy.float64)
-        self.cost_list_stacked = numpy.zeros((self.n_observations,self.n_stacked_frames), dtype=numpy.float64)
-        self.obs_list_stacked = []
-
-        for i in range(0, self.n_stacked_frames):
-            self.v_list_stacked[:,i] = v_list_init
-            self.w_list_stacked[:,i] = w_list_init
-            self.cost_list_stacked[:,i] = cost_list_init
-            self.obs_list_stacked.append(obs_init)
-
-        init_obs = self._get_obs()
-
-        
-
+        obs_init = numpy.asarray(list(obs_init.obst))
+        self.obs_list_stacked = numpy.column_stack((obs_init for _ in range(0, self.n_stacked_frames)))
         self.previous_distance2goal = self._get_distance2goal()
         self.publish_filtered_laser_scan(   laser_original_data=laser_scan,
                                          new_filtered_laser_range=discretized_ranges)
