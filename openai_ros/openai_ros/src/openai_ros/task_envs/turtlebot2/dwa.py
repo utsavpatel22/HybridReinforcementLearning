@@ -52,7 +52,7 @@ def calc_trajectory(xinit, v, y, config):
     return traj
 
 # Calculate trajectory, costings, and return velocities to apply to robot
-def calc_final_input(x, u, dw, config, ob):
+def calc_final_input(x, u, dw, config, ob, num_stacked_frames):
 
     xinit = x[:]
     min_cost = 10000.0
@@ -61,6 +61,7 @@ def calc_final_input(x, u, dw, config, ob):
     v_list = []
     w_list = []
     cost_list = []
+    cost_matrix = np.empty((0,num_stacked_frames), int)
     v_reso = (dw[1] - dw[0]) / 12
     yawrate_reso = (dw[3] - dw[2]) / 12
     # evaluate all trajectory with sampled input in dynamic window
@@ -72,22 +73,30 @@ def calc_final_input(x, u, dw, config, ob):
             to_goal_cost = calc_to_goal_cost(traj, config) * config.to_goal_cost_gain
             speed_cost = config.speed_cost_gain * \
                 (config.max_speed - traj[-1, 3])
+            
+            ob_cost = calc_obs_cost_bigO_efficient(traj, ob, config, num_stacked_frames) * config.obs_cost_gain
 
-            ob_cost = calc_obstacle_cost(traj, ob, config) * config.obs_cost_gain
-
+            
             final_cost = to_goal_cost + speed_cost + ob_cost
             v_list.append(v)
             w_list.append(w)
-            cost_list.append(final_cost)
+            cost_matrix = np.append(cost_matrix,final_cost, axis = 0)    
+
+    cost_list, v_list, w_list, cost_matrix = zip(*sorted(zip(cost_matrix[:,num_stacked_frames - 1], v_list, w_list, cost_matrix))) # Change 5 with a parameter
+
+    cost_matrix = np.asarray(cost_matrix)
+    max_cost = np.max(cost_matrix)
+    cost_matrix_normalized = cost_matrix / max_cost
+
+    np_v_list = np.asarray(v_list)
+    np_v_list = np_v_list[:,np.newaxis]
+    v_matrix = np.tile(np_v_list, num_stacked_frames)
+
+    np_w_list = np.asarray(w_list)
+    np_w_list = np_w_list[:,np.newaxis]
+    w_matrix = np.tile(np_w_list, num_stacked_frames)
     
-
-    cost_list, v_list, w_list = zip(*sorted(zip(cost_list, v_list, w_list)))
-
-    cost_list = np.asarray(cost_list)
-    max_cost = np.max(cost_list)
-    cost_list_normalized = cost_list / max_cost
-
-    return np.asarray(v_list), np.asarray(w_list), cost_list_normalized
+    return v_matrix, w_matrix, cost_matrix_normalized
 
 # Calculate obstacle cost inf: collision, 0:free
 def calc_obstacle_cost(traj, ob, config):
@@ -113,25 +122,31 @@ def calc_obstacle_cost(traj, ob, config):
 
     return 1.0 / minr
 
-# Calculates obstacle cost in more efficient way (in terms of big O). It uses obstacle vector instead of using a for loop. 
-def calc_obs_cost_bigO_efficient(traj, ob, config):
+def calc_obs_cost_bigO_efficient(traj, ob, config, num_stacked_frames):
     skip_n = 2
-    ob = np.asarray(list(ob))
-    minr = float("inf")
+    r_min_stacked = np.tile(np.array([np.array([float("inf")])]), num_stacked_frames)
+    obs_cost = np.tile(np.array([np.array([float("inf")])]), num_stacked_frames)
 
     for ii in range(0, len(traj[:, 1]), skip_n):
         trajxy = np.array([traj[ii, 0], traj[ii, 1]])
-        square_dxy = np.square(ob - trajxy)
-        p_dist = np.sqrt(np.sum(square_dxy, axis = 1))
-        r_min = np.amin(p_dist)
+        trajxy_stacked = np.tile(trajxy, num_stacked_frames)  # Repeat the trajxy to make it same in dimension as ob
+        square_dxy = np.square(ob - trajxy_stacked)
+        square_dxy_odd = square_dxy[:,1::2]
+        square_dxy_even = square_dxy[:,0::2]
+        sqaure_dxy_sum = np.add(square_dxy_odd, square_dxy_even)
+        dist_stacked = np.sqrt(sqaure_dxy_sum)
+        r_min_tmp = np.min(dist_stacked, axis = 0)
+        r_min_stacked = np.vstack((r_min_stacked, r_min_tmp))
 
-        if r_min <= config.robot_radius:
-            return 40 # collision
+    r_min = np.min(r_min_stacked, axis = 0)
+    
+    for i in range(0, len(r_min)):
+        if r_min[i] <= config.robot_radius:
+            obs_cost[0,i] = 40
 
-        if minr >= r_min:
-            minr = r_min
-
-    return 1.0 / minr
+        else:
+            obs_cost[0,i] = 1.0 / r_min[i]
+    return obs_cost
 
 # Calculate goal cost via Pythagorean distance to robot
 def calc_to_goal_cost(traj, config):
@@ -155,12 +170,12 @@ def calc_to_goal_cost(traj, config):
     return cost
 
 # Begin DWA calculations
-def dwa_control(x, u, config, ob):
+def dwa_control(x, u, config, obstacles, num_stacked_frames):
     # Dynamic Window control
 
     dw = calc_dynamic_window(x, config)
 
-    u = calc_final_input(x, u, dw, config, ob)
+    u = calc_final_input(x, u, dw, config, obstacles, num_stacked_frames)
 
     return u
 
@@ -173,7 +188,7 @@ def atGoal(config, x):
     return False
 
 
-def DWA(config, obstacles):
+def DWA(config, obstacles, num_stacked_frames):
    
     # initial state [x(m), y(m), theta(rad), v(m/s), omega(rad/s)]
     x = np.array([config.x, config.y, config.th, config.v, config.omega])
@@ -181,10 +196,10 @@ def DWA(config, obstacles):
     u = np.array([0.0, 0.0])
 
     start_time = time.time()
-    v_list, w_list, cost_list = dwa_control(x, u, config, obstacles.obst)
+    v_matrix, w_matrix, cost_matrix_normalized = dwa_control(x, u, config, obstacles, num_stacked_frames)
     
     
-    return v_list, w_list, cost_list
+    return v_matrix, w_matrix, cost_matrix_normalized
        
 
 
