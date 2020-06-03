@@ -290,8 +290,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         rospy.logdebug("Start Set Action ==>"+str(action))
         # We convert the actions to speed movements to send to the parent class CubeSingleDiskEnv
         
-        linear_speed = self.v_list[action]
-        angular_speed = self.w_list[action]
+        linear_speed = self.v_matrix[:,self.n_stacked_frames - 1][action]
+        angular_speed = self.w_matrix[:,self.n_stacked_frames - 1][action]
         self.last_action = linear_speed
         
         # We tell TurtleBot2 the linear and angular speed to set to execute
