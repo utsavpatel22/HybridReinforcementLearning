@@ -310,6 +310,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         TurtleBot2Env API DOCS
         :return:
         """
+        start_tt =time.time()
         rospy.logdebug("Start Get Observation ==>")
         # We get the laser scan data
         laser_scan = self.get_laser_scan()
@@ -343,7 +344,14 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
 
         self.obs_list_stacked = numpy.append(self.obs_list_stacked, self.obs.obst, 1)
 
+        # print("The stacked obs list {}".format(self.obs_list_stacked))
+        # print("The stacked obs list part {}".format(self.obs_list_stacked[:5,:]))
+
         self.v_matrix, self.w_matrix, self.cost_matrix = DWA(cnfg, self.obs_list_stacked, self.n_stacked_frames)
+
+        # print("The v_matrix {}".format(self.v_matrix[:,self.n_stacked_frames - 1]))
+        # print("The w_matrix {}".format(self.w_matrix[:,self.n_stacked_frames - 1]))
+        # print("The cost_matrix {}".format(self.cost_matrix[:,self.n_stacked_frames - 1]))
        
 
         self.stacked_obs = numpy.stack((self.v_matrix, self.w_matrix, self.cost_matrix), axis=2)
