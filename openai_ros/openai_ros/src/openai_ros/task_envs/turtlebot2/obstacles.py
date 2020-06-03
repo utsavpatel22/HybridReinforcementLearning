@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import math
+import numpy as np
 class Obstacles():
     def __init__(self, ranges, config):
         # Set of coordinates of obstacles in view
@@ -7,6 +8,7 @@ class Obstacles():
         self.ranges = ranges
         self.config = config
         self.assignObs()
+        
 
     # Custom range implementation to loop over LaserScan degrees with
     # a step and include the final degree
@@ -22,7 +24,7 @@ class Obstacles():
 
         deg = len(self.ranges)   # Number of degrees - varies in Sim vs real world
         # print("Laser degree length {}".format(deg))
-        self.obst = set()   # reset the obstacle set to only keep visible objects
+        self.obst = np.empty([0,2])   # reset the obstacle set to only keep visible objects
 
         maxAngle = 270
         scanSkip = 4
@@ -102,8 +104,18 @@ class Obstacles():
                 # print("Current yaw of the robot {}".format(config.th))
 
                 # add coords to set so as to only take unique obstacles
-                self.obst.add((obsX,obsY))
+                obs_row = np.array([obsX, obsY])
+                self.obst = np.vstack((self.obst,obs_row))
                 # print("The obstacle space is {}".format(self.obst))
                 #print self.obst
         # print("The total angle count is {}".format(angleCount  ))
+
+            else:
+                obsX = float("inf")
+                obsY = float("inf")
+                obs_row = np.array([obsX, obsY])
+                self.obst = np.vstack((self.obst,obs_row))
+
+        # print("The set size {}".format((self.obst.shape)))
+
 
