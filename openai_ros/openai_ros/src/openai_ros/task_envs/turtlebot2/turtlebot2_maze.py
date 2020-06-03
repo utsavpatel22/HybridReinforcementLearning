@@ -272,11 +272,12 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         odom_dict_init["omega"] = odom_data_init.twist.twist.angular.z
         cnfg = Config(odom_dict_init, self.goal_pose)
         obs_init = Obstacles(laser_scan.ranges, cnfg)
-        obs_init = numpy.asarray(list(obs_init.obst))
-        self.obs_list_stacked = numpy.column_stack((obs_init for _ in range(0, self.n_stacked_frames)))
+        self.obs_list_stacked = numpy.column_stack((obs_init.obst for _ in range(0, self.n_stacked_frames)))
+        init_obs = self._get_obs()
         self.previous_distance2goal = self._get_distance2goal()
         self.publish_filtered_laser_scan(   laser_original_data=laser_scan,
                                          new_filtered_laser_range=discretized_ranges)
+
 
 
     def _set_action(self, action):
@@ -338,39 +339,15 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         cnfg = Config(self.odom_dict, self.goal_pose)
         self.obs = Obstacles(laser_scan.ranges, cnfg)
 
-        # Pausing the simulator if only one robot is used
+        self.obs_list_stacked = numpy.delete(self.obs_list_stacked, (0,1), 1)
 
-        if (self.robot_number == 0):
-        	self.gazebo.pauseSim()
+        self.obs_list_stacked = numpy.append(self.obs_list_stacked, self.obs.obst, 1)
 
-        del self.obs_list_stacked[0]
-        self.obs_list_stacked.append(self.obs)
+        v_matrix, w_matrix, cost_matrix = DWA(cnfg, self.obs_list_stacked, self.n_stacked_frames)
+       
 
-        for j in range(0, self.n_stacked_frames):
-            self.v_list_stacked = numpy.delete(self.v_list_stacked, 0, axis = 1)
-            self.w_list_stacked = numpy.delete(self.w_list_stacked, 0, axis = 1)
-            self.cost_list_stacked = numpy.delete(self.cost_list_stacked, 0, axis = 1)
-            print(j)
-
-            self.v_list, self.w_list, self.cost_list = DWA(cnfg, self.obs_list_stacked[j])
-            self.v_list = self.v_list[:, numpy.newaxis]
-            self.w_list = self.w_list[:, numpy.newaxis]
-            self.cost_list = self.cost_list[:, numpy.newaxis]
-            
-            
-            self.v_list_stacked = numpy.append(self.v_list_stacked, self.v_list, axis = 1)
-            self.w_list_stacked = numpy.append(self.w_list_stacked, self.w_list, axis = 1)
-            self.cost_list_stacked = numpy.append(self.cost_list_stacked, self.cost_list, axis = 1)
-
-
-        self.stacked_obs = numpy.stack((self.v_list_stacked,self.w_list_stacked,self.cost_list_stacked), axis=2)
-        print("The shape of stacked frames is-------------------------------------------------- {}".format(self.stacked_obs.shape))
-        end_t = time.time()
-
-        if (self.robot_number == 0):
-        	self.gazebo.unpause()
-
-        # print("The time for robot {} ----------------------------------is {}".format(self.robot_number, end_t - start_t))
+        self.stacked_obs = numpy.stack((v_matrix, w_matrix, cost_matrix), axis=2)
+         
 
         self.current_distance2goal = self._get_distance2goal()
         if (self.current_distance2goal < 0.5):
