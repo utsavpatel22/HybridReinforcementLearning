@@ -343,10 +343,10 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
 
         self.obs_list_stacked = numpy.append(self.obs_list_stacked, self.obs.obst, 1)
 
-        v_matrix, w_matrix, cost_matrix = DWA(cnfg, self.obs_list_stacked, self.n_stacked_frames)
+        self.v_matrix, self.w_matrix, self.cost_matrix = DWA(cnfg, self.obs_list_stacked, self.n_stacked_frames)
        
 
-        self.stacked_obs = numpy.stack((v_matrix, w_matrix, cost_matrix), axis=2)
+        self.stacked_obs = numpy.stack((self.v_matrix, self.w_matrix, self.cost_matrix), axis=2)
          
 
         self.current_distance2goal = self._get_distance2goal()
