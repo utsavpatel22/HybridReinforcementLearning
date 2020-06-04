@@ -66,7 +66,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.min_range = rospy.get_param('/turtlebot2/min_range',0.5)
         self.max_cost = rospy.get_param('/turtlebot2/max_cost',1)
         self.min_cost = rospy.get_param('/turtlebot2/min_cost',0)
-        self.n_stacked_frames = rospy.get_param('/turtlebot2/n_stacked_frames',5)
+        self.n_stacked_frames = rospy.get_param('/turtlebot2/n_stacked_frames',10)
 
         self.max_linear_speed = rospy.get_param('/turtlebot2/max_linear_speed',0.65)
         self.max_angular_speed = rospy.get_param('/turtlebot2/max_angular_speed',1)
@@ -347,9 +347,10 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         # print("The stacked obs list {}".format(self.obs_list_stacked))
         # print("The stacked obs list part {}".format(self.obs_list_stacked[:5,:]))
 
+
         self.v_matrix, self.w_matrix, self.cost_matrix = DWA(cnfg, self.obs_list_stacked, self.n_stacked_frames)
 
-        # print("The v_matrix {}".format(self.v_matrix[:,self.n_stacked_frames - 1]))
+        # print("The w_matrix after {}".format(self.w_matrix[:5,:]))
         # print("The w_matrix {}".format(self.w_matrix[:,self.n_stacked_frames - 1]))
         # print("The cost_matrix {}".format(self.cost_matrix[:,self.n_stacked_frames - 1]))
        
