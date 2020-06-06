@@ -198,6 +198,40 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
             self.initial_pose["z_rot_init"] = 0
             self.initial_pose["w_rot_init"] = 1
 
+        elif (self.world_file_name == "4_robot_3D1P"):
+
+            if (self.robot_number == 0):
+                self.initial_pose["x_init"] = 0.8866
+                self.initial_pose["y_init"] = 0.24
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0
+                self.initial_pose["w_rot_init"] = 1
+
+            elif (self.robot_number == 1):
+                self.initial_pose["x_init"] = 1.18
+                self.initial_pose["y_init"] = 12.13
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0
+                self.initial_pose["w_rot_init"] = 1
+
+            elif(self.robot_number == 2):
+                self.initial_pose["x_init"] = -10.085
+                self.initial_pose["y_init"] = 12.15
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 1
+                self.initial_pose["w_rot_init"] = 0.001
+
+            elif(self.robot_number == 3):
+                self.initial_pose["x_init"] = -11.0
+                self.initial_pose["y_init"] = -0.03
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 1
+                self.initial_pose["w_rot_init"] = 0.001
+
         return self.initial_pose
 
 
@@ -228,6 +262,26 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         elif(self.world_file_name == "zigzag_3ped"):
            self.goal_pose["x"] = 12.5
            self.goal_pose["y"] = 0
+
+        elif(self.world_file_name == "4_robot_3D1P"):
+            if (self.robot_number == 0):
+               self.goal_pose["x"] = 14.81
+               self.goal_pose["y"] = 0.24
+            
+
+            elif (self.robot_number == 1):
+               self.goal_pose["x"] = 15.0
+               self.goal_pose["y"] = 12.13
+            
+
+            elif(self.robot_number == 2):
+               self.goal_pose["x"] = -24.23
+               self.goal_pose["y"] = 11.14
+            
+
+            elif(self.robot_number == 3):
+               self.goal_pose["x"] = -24.39
+               self.goal_pose["y"] = 1.021
 
 
     def _get_distance2goal(self):
