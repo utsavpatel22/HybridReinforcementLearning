@@ -17,57 +17,21 @@ def modified_nature_cnn(scaled_images, **kwargs):
     layer_2 = conv_to_fc(layer_2)
     return activ(linear(layer_2, 'fc1', n_hidden=128, init_scale=np.sqrt(2)))
 
-def modified_nature_rnn(scaled_images, **kwargs):
-    """
-    CNN from Nature paper.
-    :param scaled_images: (TensorFlow Tensor) Image input placeholder
-    :param kwargs: (dict) Extra keywords parameters for the convolutional layers of the RNN
-    :return: (TensorFlow Tensor) The RNN output layer
-    """
-
-def LSTM_RNN(_X, _weights, _biases):
-    # Function returns a tensorflow LSTM (RNN) artificial neural network from given parameters.
-    # Moreover, two LSTM cells are stacked which adds deepness to the neural network.
-    # Note, some code of this notebook is inspired from an slightly different
-    # RNN architecture used on another dataset, some of the credits goes to
-    # "aymericdamien" under the MIT license.
-
-    # (NOTE: This step could be greatly optimised by shaping the dataset once
-    # input shape: (batch_size, n_steps, n_input)
-    _X = tf.transpose(_X, [1, 0, 2])  # permute n_steps and batch_size
-    # Reshape to prepare input to hidden activation
-    _X = tf.reshape(_X, [-1, n_input])
-    # new shape: (n_steps*batch_size, n_input)
-
-    # ReLU activation, thanks to Yu Zhao for adding this improvement here:
-    _X = tf.nn.relu(tf.matmul(_X, _weights['hidden']) + _biases['hidden'])
-    # Split data because rnn cell needs a list of inputs for the RNN inner loop
-    _X = tf.split(_X, n_steps, 0)
-    # new shape: n_steps * (batch_size, n_hidden)
-
-    # Define two stacked LSTM cells (two recurrent layers deep) with tensorflow
-    lstm_cell_1 = tf.contrib.rnn.BasicLSTMCell(n_hidden, forget_bias=1.0, state_is_tuple=True)
-    lstm_cell_2 = tf.contrib.rnn.BasicLSTMCell(n_hidden, forget_bias=1.0, state_is_tuple=True)
-    lstm_cells = tf.contrib.rnn.MultiRNNCell([lstm_cell_1, lstm_cell_2], state_is_tuple=True)
-    # Get LSTM cell output
-    outputs, states = tf.contrib.rnn.static_rnn(lstm_cells, _X, dtype=tf.float32)
-
-    # Get last time step's output feature for a "many-to-one" style classifier,
-    # as in the image describing RNNs at the top of this page
-    lstm_last_output = outputs[-1]
-
-    # Linear activation
-    return tf.matmul(lstm_last_output, _weights['out']) + _biases['out']
-
 
 class CustomCNNPolicy(common.FeedForwardPolicy):
     
     def __init__(self, *args, **kwargs):
+        print(*args)
+        import pdb
+        pdb.set_trace()
         super(CustomCNNPolicy, self).__init__(*args, **kwargs, cnn_extractor=modified_nature_cnn, feature_extraction="cnn")
 
 
-class CustomRNNPolicy(common.FeedForwardPolicy):
 
-    def __init__(self, *args, **kwargs):
-        super(CustomRNNPolicy, self).__init__(*args, **kwargs, cnn_extractor=modified_nature_rnn,
-                                              feature_extraction="rnn")
+class CustomLSTMPolicy(LstmPolicy):
+    def __init__(self, sess, ob_space, ac_space, n_env, n_steps, n_batch, n_lstm=64, reuse=False, **_kwargs):
+        super().__init__(sess, ob_space, ac_space, n_env, n_steps, n_batch, n_lstm, reuse,
+                         net_arch=[8, 'lstm', dict(vf=[5, 10], pi=[10])],
+                         layer_norm=True, feature_extraction="mlp", **_kwargs)
+
+        cnn_extractor=modified_nature_cnn
