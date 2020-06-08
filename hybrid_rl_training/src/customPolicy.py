@@ -4,7 +4,7 @@ from stable_baselines.common.tf_layers import conv, linear, conv_to_fc, lstm
 import numpy as np
 
 
-def modified_nature_cnn(scaled_images, **kwargs):
+def modified_small_nature_cnn(scaled_images, **kwargs):
     """
     CNN from Nature paper.
     :param scaled_images: (TensorFlow Tensor) Image input placeholder
