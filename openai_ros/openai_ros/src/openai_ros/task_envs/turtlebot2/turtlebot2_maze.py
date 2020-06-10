@@ -12,6 +12,8 @@ from openai_ros.task_envs.turtlebot2.config import Config
 from openai_ros.task_envs.turtlebot2.obstacles import Obstacles
 from openai_ros.task_envs.turtlebot2.dwa import DWA
 from openai_ros.gazebo_connection import GazeboConnection
+import cv2
+import os
 
 
 # The path is __init__.py of openai_ros, where we import the TurtleBot2MazeEnv directly
@@ -135,6 +137,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.cumulated_steps = 0.0
 
         self.laser_filtered_pub = rospy.Publisher('/turtlebot'+str(robot_number)+'/laser/scan_filtered', LaserScan, queue_size=1)
+        self.visualize_obs = True
+        self.episode_num = 0
 
         
 
@@ -288,13 +292,24 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         """ Gets the distance to the goal
         """
         return math.sqrt((self.goal_pose["x"] - self.odom_dict["x"])**2 + (self.goal_pose["y"] - self.odom_dict["y"])**2)
-            
-
-        
 
 
+    def viz_obs(self):
+        max_v_num = numpy.max(self.v_matrix)
+        max_w_num = numpy.max(self.w_matrix)
+        max_cost_num = numpy.max(self.cost_matrix)
 
+        v_normalized = (self.v_matrix / max_v_num) * 255
+        v_normalized = v_normalized.astype(numpy.uint8)
+        w_normalized = (self.w_matrix / max_w_num) * 255
+        w_normalized = w_normalized.astype(numpy.uint8)
+        cost_normalized = (self.cost_matrix / max_cost_num) * 255
+        cost_normalized = cost_normalized.astype(numpy.uint8)
 
+        cv2.imwrite("../observation_visualization/v/v_matrix_"+str(self.episode_num)+"_"+str(self.counter)+".jpg", v_normalized)
+        cv2.imwrite("../observation_visualization/w/w_matrix_"+str(self.episode_num)+"_"+str(self.counter)+".jpg", w_normalized)
+        cv2.imwrite("../observation_visualization/cost/cost_matrix_"+str(self.episode_num)+"_"+str(self.counter)+".jpg", cost_normalized)
+        self.counter = self.counter + 1
 
     def _init_env_variables(self):
         """
@@ -327,10 +342,15 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         cnfg = Config(odom_dict_init, self.goal_pose)
         obs_init = Obstacles(laser_scan.ranges, cnfg)
         self.obs_list_stacked = numpy.column_stack((obs_init.obst for _ in range(0, self.n_stacked_frames)))
+
+        self.counter = 1
+        self.episode_num = self.episode_num + 1
+
         init_obs = self._get_obs()
         self.previous_distance2goal = self._get_distance2goal()
         self.publish_filtered_laser_scan(   laser_original_data=laser_scan,
                                          new_filtered_laser_range=discretized_ranges)
+        
 
 
 
@@ -407,6 +427,9 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         # print("The w_matrix after {}".format(self.w_matrix[:5,:]))
         # print("The w_matrix {}".format(self.w_matrix[:,self.n_stacked_frames - 1]))
         # print("The cost_matrix {}".format(self.cost_matrix[:,self.n_stacked_frames - 1]))
+
+        if (self.visualize_obs == True):
+        	self.viz_obs()
        
 
         self.stacked_obs = numpy.stack((self.v_matrix, self.w_matrix, self.cost_matrix), axis=2)
