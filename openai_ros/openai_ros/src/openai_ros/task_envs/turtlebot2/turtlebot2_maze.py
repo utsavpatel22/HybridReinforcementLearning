@@ -131,7 +131,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         # Rewards
         self.forwards_reward = rospy.get_param("/turtlebot2/forwards_reward",5)
         self.invalid_penalty = rospy.get_param("/turtlebot2/invalid_penalty",20)
-        self.end_episode_points = rospy.get_param("/turtlebot2/end_episode_points",1000)
+        self.end_episode_points = rospy.get_param("/turtlebot2/end_episode_points",1500)
         self.goal_reaching_points = rospy.get_param("/turtlebot2/goal_reaching_points",500)
 
         self.cumulated_steps = 0.0
