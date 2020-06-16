@@ -21,9 +21,9 @@ def modified_nature_cnn(scaled_images, **kwargs):
 class CustomCNNPolicy(common.FeedForwardPolicy):
     
     def __init__(self, *args, **kwargs):
-        print(*args)
-        import pdb
-        pdb.set_trace()
+        # print(*args)
+        # import pdb
+        # pdb.set_trace()
         super(CustomCNNPolicy, self).__init__(*args, **kwargs, cnn_extractor=modified_nature_cnn, feature_extraction="cnn")
 
 
