@@ -28,7 +28,6 @@ def check_collision(data, min_range):
         """
         collision_status = False       
         for i, item in enumerate(data.ranges):
-            print("item value {}".format(item))
             if (min_range > item):
                 collision_status = True
         
@@ -60,7 +59,8 @@ if __name__ == '__main__':
             
             if (done):
                 collision_status = check_collision(laser_scan, min_range)
-                collisions += 1
+                if (collision_status):
+                    collisions += 1
                 counter += 1
                 break
         
