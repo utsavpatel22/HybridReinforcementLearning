@@ -47,6 +47,8 @@ class Config():
         self.goalX = 0.0
         self.goalY = 0.0
         self.r = rospy.Rate(20)
+        self.goalX = 2
+        self.goalY = 0
 
     # Callback for Odometry
     def assignOdomCoords(self, msg):
@@ -58,12 +60,6 @@ class Config():
             euler_from_quaternion ([rot_q.x,rot_q.y,rot_q.z,rot_q.w])
         self.th = theta
 
-       
-
-    # Callback for attaining goal co-ordinates from Rviz Publish Point
-    def goalCB(self,msg):
-        self.goalX = msg.point.x
-        self.goalY = msg.point.y
 
 class Obstacles():
     def __init__(self):
@@ -144,7 +140,7 @@ class Obstacles():
                 
                     
 
-                print("The angle is {}".format(objTheta * 180 / 3.14))
+                # print("The angle is {}".format(objTheta * 180 / 3.14))
 
 
 
@@ -332,7 +328,6 @@ def main():
     obs = Obstacles()
     subOdom = rospy.Subscriber("/turtlebot"+str(0)+"/ground_truth/state", Odometry, config.assignOdomCoords)
     subLaser = rospy.Subscriber("/turtlebot"+str(0)+"/scan_filtered", LaserScan, obs.assignObs, config)
-    subGoal = rospy.Subscriber("/clicked_point", PointStamped, config.goalCB)
     pub = rospy.Publisher("/turtlebot"+str(0)+"/cmd_vel_mux/input/navi", Twist, queue_size=1)
     speed = Twist()
     # initial state [x(m), y(m), theta(rad), v(m/s), omega(rad/s)]
@@ -362,6 +357,9 @@ def main():
             speed.angular.z = 0.0
             count += 1
             reset_robot()
+            x = np.array([config.x, config.y, config.th, 0.0, 0.0])
+            continue
+        print(atGoal(config,x))
 
         pub.publish(speed)
         config.r.sleep()
