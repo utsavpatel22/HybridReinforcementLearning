@@ -139,6 +139,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.laser_filtered_pub = rospy.Publisher('/turtlebot'+str(robot_number)+'/laser/scan_filtered', LaserScan, queue_size=1)
         self.visualize_obs = True
         self.episode_num = 0
+        self.total_collisions = 0
+        self.episode_collisions = 0
 
         
 
@@ -350,6 +352,9 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.previous_distance2goal = self._get_distance2goal()
         self.publish_filtered_laser_scan(   laser_original_data=laser_scan,
                                          new_filtered_laser_range=discretized_ranges)
+        self.total_collisions += self.episode_collisions
+        print("Total number of collsions ------------ {}".format(self.total_collisions))
+        self.episode_collisions = 0
         
 
 
@@ -520,6 +525,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                     
                 if (self.min_range > item > 0):
                     rospy.logerr("done Validation >>> item=" + str(item)+"< "+str(self.min_range))
+                    if not self._episode_done:
+                        self.episode_collisions += 1
                     self._episode_done = True
                 else:
                     rospy.logwarn("NOT done Validation >>> item=" + str(item)+"< "+str(self.min_range))
