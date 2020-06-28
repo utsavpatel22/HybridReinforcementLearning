@@ -21,24 +21,13 @@ class CustomPolicy(FeedForwardPolicy):
                                                           vf=[144, 144, 144])],
                                            feature_extraction="mlp")
 
-def check_collision(data, min_range):
-        """
-        Checks if the robot collided
-        value.
-        """
-        collision_status = False       
-        for i, item in enumerate(data.ranges):
-            if (min_range > item):
-                collision_status = True
-        
-        return collision_status
 
 if __name__ == '__main__':
     world_file = sys.argv[1]
     number_of_robots = sys.argv[2]
     robot_number = sys.argv[3] # Provide robot number to subscribe to the correct topic  
     max_steps = 900
-    max_test_episodes = 10
+    max_test_episodes = 4
     min_range = 0.5 # Refer Task environment to get the value of min range
     rospy.init_node('stable_training', anonymous=True, log_level=rospy.WARN)
     env_temp = TurtleBot2MazeEnv
@@ -52,15 +41,12 @@ if __name__ == '__main__':
         # Evaluate the agent
         episode_reward = 0
         for _ in range(max_steps):
-            laser_scan = rospy.wait_for_message("/turtlebot"+str(robot_number)+"/scan_filtered", LaserScan, timeout=5.0)
             action, _ = model.predict(obs)
             obs, reward, done, info = env.step(action)
             episode_reward += reward
             
             if (done):
-                collision_status = check_collision(laser_scan, min_range)
-                if (collision_status):
-                    collisions += 1
+                print("Done")
                 counter += 1
                 break
         
