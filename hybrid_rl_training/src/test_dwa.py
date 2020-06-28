@@ -18,6 +18,8 @@ from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
 from tf.transformations import euler_from_quaternion
 import time
+from gazebo_msgs.srv import SetModelState, SetModelStateRequest
+import sys
 
 class Config():
     # simulation parameters
@@ -304,6 +306,23 @@ def atGoal(config, x):
         return True
     return False
 
+def reset_robot():
+    reset_robot = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
+    robot_reset_request = SetModelStateRequest()
+    robot_reset_request.model_state.model_name = 'turtlebot' + str(robot_number)
+    robot_reset_request.model_state.pose.position.x = initial_pose["x_init"]
+    robot_reset_request.model_state.pose.position.y = initial_pose["y_init"]
+    robot_reset_request.model_state.pose.orientation.x = initial_pose["x_rot_init"]
+    robot_reset_request.model_state.pose.orientation.y = initial_pose["y_rot_init"]
+    robot_reset_request.model_state.pose.orientation.z = initial_pose["z_rot_init"]
+    robot_reset_request.model_state.pose.orientation.w = initial_pose["w_rot_init"]
+
+    rospy.wait_for_service('/gazebo/set_model_state')
+    try:
+        reset_robot(robot_reset_request)
+    except rospy.ServiceException as e:
+        print ("/gazebo/set_model_state service call failed")
+
 
 def main():
     print(__file__ + " start!!")
@@ -311,18 +330,21 @@ def main():
     config = Config()
     # position of obstacles
     obs = Obstacles()
-    subOdom = rospy.Subscriber("/turtlebot/odom", Odometry, config.assignOdomCoords)
-    subLaser = rospy.Subscriber("/turtlebot/scan", LaserScan, obs.assignObs, config)
+    subOdom = rospy.Subscriber("/turtlebot"+str(0)+"/ground_truth/state", Odometry, config.assignOdomCoords)
+    subLaser = rospy.Subscriber("/turtlebot"+str(0)+"/scan_filtered", LaserScan, obs.assignObs, config)
     subGoal = rospy.Subscriber("/clicked_point", PointStamped, config.goalCB)
-    pub = rospy.Publisher("/turtlebot/cmd_vel_mux/input/navi", Twist, queue_size=1)
+    pub = rospy.Publisher("/turtlebot"+str(0)+"/cmd_vel_mux/input/navi", Twist, queue_size=1)
     speed = Twist()
     # initial state [x(m), y(m), theta(rad), v(m/s), omega(rad/s)]
     x = np.array([config.x, config.y, config.th, 0.0, 0.0])
     # initial linear and angular velocities
     u = np.array([0.0, 0.0])
 
+    max_test_episodes = 4
+    count = 0
+
     # runs until terminated externally
-    while not rospy.is_shutdown():
+    while not rospy.is_shutdown() or (count < max_test_episodes):
         if (atGoal(config,x) == False):
             start_time = time.time()
             u = dwa_control(x, u, config, obs.obst)
@@ -338,6 +360,8 @@ def main():
             # if at goal then stay there until new goal published
             speed.linear.x = 0.0
             speed.angular.z = 0.0
+            count += 1
+            reset_robot()
 
         pub.publish(speed)
         config.r.sleep()
@@ -345,4 +369,16 @@ def main():
 
 if __name__ == '__main__':
     rospy.init_node('dwa')
+    global robot_number
+    robot_number = sys.argv[1]
+    global initial_pose
+    initial_pose = {}
+
+    initial_pose["x_init"] = 0
+    initial_pose["y_init"] = 0
+    initial_pose["x_rot_init"] = 0
+    initial_pose["y_rot_init"] = 0
+    initial_pose["z_rot_init"] = 0
+    initial_pose["w_rot_init"] = 1
+
     main()
