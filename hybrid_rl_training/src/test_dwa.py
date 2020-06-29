@@ -47,7 +47,7 @@ class Config():
         self.goalX = 0.0
         self.goalY = 0.0
         self.r = rospy.Rate(20)
-        self.goalX = 5
+        self.goalX = 12.5
         self.goalY = 0
 
 
@@ -343,7 +343,7 @@ def main():
     # initial linear and angular velocities
     u = np.array([0.0, 0.0])
 
-    max_test_episodes = 4
+    max_test_episodes = 50
     reached = False
     count = 0
     total_collisions = 0
@@ -390,7 +390,7 @@ if __name__ == '__main__':
     global initial_pose
     initial_pose = {}
 
-    initial_pose["x_init"] = 0
+    initial_pose["x_init"] = 1
     initial_pose["y_init"] = 0
     initial_pose["x_rot_init"] = 0
     initial_pose["y_rot_init"] = 0
