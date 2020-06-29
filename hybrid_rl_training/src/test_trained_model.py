@@ -27,7 +27,7 @@ if __name__ == '__main__':
     number_of_robots = sys.argv[2]
     robot_number = sys.argv[3] # Provide robot number to subscribe to the correct topic  
     max_steps = 900
-    max_test_episodes = 4
+    max_test_episodes = 50
     min_range = 0.5 # Refer Task environment to get the value of min range
     rospy.init_node('stable_training', anonymous=True, log_level=rospy.WARN)
     env_temp = TurtleBot2MazeEnv
@@ -49,4 +49,6 @@ if __name__ == '__main__':
                 print("Done")
                 counter += 1
                 break
+
+    print("Total number of collisions {}".format(collisions))
         
