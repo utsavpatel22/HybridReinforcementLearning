@@ -47,8 +47,9 @@ class Config():
         self.goalX = 0.0
         self.goalY = 0.0
         self.r = rospy.Rate(20)
-        self.goalX = 2
+        self.goalX = 5
         self.goalY = 0
+
 
     # Callback for Odometry
     def assignOdomCoords(self, msg):
@@ -65,6 +66,7 @@ class Obstacles():
     def __init__(self):
         # Set of coordinates of obstacles in view
         self.obst = set()
+        self.collision_status = False
 
     # Custom range implementation to loop over LaserScan degrees with
     # a step and include the final degree
@@ -88,8 +90,14 @@ class Obstacles():
         angleCount = 0
         angleValuePos = 0
         angleValueNeg = 0
+        self.collision_status = False
         for angle in self.myRange(0,deg-1,scanSkip):
             distance = msg.ranges[angle]
+
+            if (distance < 0.5) and (not self.collision_status):
+                self.collision_status = True
+                print("Collided")
+                reset_robot()
             
             if(angleCount < (deg / (2*scanSkip))):
                 # print("In negative angle zone")
@@ -326,9 +334,9 @@ def main():
     config = Config()
     # position of obstacles
     obs = Obstacles()
-    subOdom = rospy.Subscriber("/turtlebot"+str(0)+"/ground_truth/state", Odometry, config.assignOdomCoords)
-    subLaser = rospy.Subscriber("/turtlebot"+str(0)+"/scan_filtered", LaserScan, obs.assignObs, config)
-    pub = rospy.Publisher("/turtlebot"+str(0)+"/cmd_vel_mux/input/navi", Twist, queue_size=1)
+    subOdom = rospy.Subscriber("/turtlebot"+str(robot_number)+"/ground_truth/state", Odometry, config.assignOdomCoords)
+    subLaser = rospy.Subscriber("/turtlebot"+str(robot_number)+"/scan_filtered", LaserScan, obs.assignObs, config)
+    pub = rospy.Publisher("/turtlebot"+str(robot_number)+"/cmd_vel_mux/input/navi", Twist, queue_size=1)
     speed = Twist()
     # initial state [x(m), y(m), theta(rad), v(m/s), omega(rad/s)]
     x = np.array([config.x, config.y, config.th, 0.0, 0.0])
@@ -336,14 +344,20 @@ def main():
     u = np.array([0.0, 0.0])
 
     max_test_episodes = 4
+    reached = False
     count = 0
+    total_collisions = 0
+    reached_goal = 0
 
     # runs until terminated externally
-    while not rospy.is_shutdown() or (count < max_test_episodes):
+    while not rospy.is_shutdown() and (count < max_test_episodes):
         if (atGoal(config,x) == False):
             start_time = time.time()
+            if (obs.collision_status):
+                count += 1
+                total_collisions += 1
             u = dwa_control(x, u, config, obs.obst)
-            print("Time to calculate a single pass through DWA {}".format(time.time() - start_time))
+            # print("Time to calculate a single pass through DWA {}".format(time.time() - start_time))
             x[0] = config.x
             x[1] = config.y
             x[2] = config.th
@@ -351,18 +365,22 @@ def main():
             x[4] = u[1]
             speed.linear.x = x[3]
             speed.angular.z = x[4]
+            reached = False
         else:
             # if at goal then stay there until new goal published
             speed.linear.x = 0.0
             speed.angular.z = 0.0
-            count += 1
+            if not reached:
+                count += 1
+                reached_goal += 1
+            reached = True
+            print("The count is {}".format(count))
             reset_robot()
             x = np.array([config.x, config.y, config.th, 0.0, 0.0])
-            continue
         print(atGoal(config,x))
-
         pub.publish(speed)
         config.r.sleep()
+    print("Total collisions and success {} ---- {}".format(total_collisions, reached_goal))
 
 
 if __name__ == '__main__':
@@ -378,5 +396,7 @@ if __name__ == '__main__':
     initial_pose["y_rot_init"] = 0
     initial_pose["z_rot_init"] = 0
     initial_pose["w_rot_init"] = 1
+
+    
 
     main()
