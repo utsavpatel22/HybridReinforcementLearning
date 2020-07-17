@@ -32,7 +32,7 @@ if __name__ == '__main__':
 	# pdb.set_trace()
 	model = PPO2(CustomLSTMPolicy, env, n_steps=900, ent_coef=0.01, learning_rate=0.0001, nminibatches=4, tensorboard_log="../PPO2_turtlebot_tensorboard/", verbose=1)
 	print('training')
-	import pdb
-	pdb.set_trace()
+	# import pdb
+	# pdb.set_trace()
 	model.learn(total_timesteps=1000000)
 	model.save("ppo2_turtlebot")
