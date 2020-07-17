@@ -11,6 +11,9 @@ def modified_nature_cnn(scaled_images, **kwargs):
     :param kwargs: (dict) Extra keywords parameters for the convolutional layers of the CNN
     :return: (TensorFlow Tensor) The CNN output layer
     """
+    # print(scaled_images.shape)
+    # import pdb
+    # pdb.set_trace()
     activ = tf.nn.relu
     layer_1 = activ(conv(scaled_images, 'c1', n_filters=8, filter_size=2, stride=1, init_scale=np.sqrt(2), **kwargs))
     layer_2 = activ(conv(layer_1, 'c2', n_filters=16, filter_size=2, stride=1, init_scale=np.sqrt(2), **kwargs))
@@ -29,10 +32,18 @@ class CustomCNNPolicy(common.FeedForwardPolicy):
 
 
 class CustomLSTMPolicy(LstmPolicy):
-    def __init__(self, *args, n_lstm=64, reuse=False, **_kwargs):
-        super().__init__(*args, n_lstm, reuse,
-                         net_arch=[8, 'lstm', dict(vf=[5, 10], pi=[10])],
+    def __init__(self, sess, ob_space, ac_space, n_env, n_steps, n_batch, n_lstm=64, reuse=False, **_kwargs):
+
+        super().__init__(sess, ob_space, ac_space, n_env, n_steps, n_batch, n_lstm, reuse,
+                         # net_arch=[144, 'lstm', dict(vf=[5, 10], pi=[10])],
                          layer_norm=True, feature_extraction="cnn", cnn_extractor=modified_nature_cnn,**_kwargs)
+
+    # def __init__(self, *args, n_lstm=64, reuse=False, **_kwargs):
+    #     super(CustomLSTMPolicy, self).__init__(*args, n_lstm, reuse,
+    #                      net_arch=[144, 'lstm', dict(vf=[5, 10], pi=[10])],
+    #                      layer_norm=True, feature_extraction="cnn",**_kwargs)
+        # cnn
+        # "
 
 
 # super(FeedForwardPolicy, self).__init__(sess, ob_space, ac_space, n_env, n_steps, n_batch, reuse=reuse,

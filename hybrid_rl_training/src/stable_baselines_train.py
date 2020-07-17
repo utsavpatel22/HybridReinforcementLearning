@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys
-sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
+# sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import gym
 from stable_baselines.common.policies import FeedForwardPolicy, register_policy
 from stable_baselines.common.vec_env import SubprocVecEnv
@@ -25,6 +25,14 @@ if __name__ == '__main__':
 	rospy.init_node('stable_training', anonymous=True, log_level=rospy.WARN)
 	env_temp = TurtleBot2MazeEnv
 	env = SubprocVecEnv([lambda k=k:env_temp(world_file, k) for k in range(int(number_of_robots))])
-	model = PPO2(CustomLSTMPolicy, env, n_steps=900, ent_coef=0.01, learning_rate=0.0001, nminibatches=5, tensorboard_log="../PPO2_turtlebot_tensorboard/", verbose=1)
+	# obs1 = env.reset()
+	# print(obs1.shape)
+	# print(obs1)
+	# import pdb
+	# pdb.set_trace()
+	model = PPO2(CustomLSTMPolicy, env, n_steps=900, ent_coef=0.01, learning_rate=0.0001, nminibatches=4, tensorboard_log="../PPO2_turtlebot_tensorboard/", verbose=1)
+	print('training')
+	import pdb
+	pdb.set_trace()
 	model.learn(total_timesteps=1000000)
 	model.save("ppo2_turtlebot")
