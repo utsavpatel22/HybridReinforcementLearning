@@ -69,6 +69,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.max_cost = rospy.get_param('/turtlebot2/max_cost',1)
         self.min_cost = rospy.get_param('/turtlebot2/min_cost',0)
         self.n_stacked_frames = rospy.get_param('/turtlebot2/n_stacked_frames',10)
+        self.n_skipped_frames = rospy.get_param('/turtlebot2/n_skipped_frames',4)
 
         self.max_linear_speed = rospy.get_param('/turtlebot2/max_linear_speed',0.65)
         self.max_angular_speed = rospy.get_param('/turtlebot2/max_angular_speed',1)
@@ -141,6 +142,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.episode_num = 0
         self.total_collisions = 0
         self.episode_collisions = 0
+        self.n_skipped_count = 0
 
         
 
@@ -355,6 +357,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.total_collisions += self.episode_collisions
         print("Total number of collsions ------------ {}".format(self.total_collisions))
         self.episode_collisions = 0
+        self.n_skipped_count = 0
         
 
 
@@ -419,9 +422,19 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         cnfg = Config(self.odom_dict, self.goal_pose)
         self.obs = Obstacles(laser_scan.ranges, cnfg)
 
-        self.obs_list_stacked = numpy.delete(self.obs_list_stacked, (0,1), 1)
+        if(self.n_skipped_count == 0):
+            self.obs_list_stacked = numpy.delete(self.obs_list_stacked, (0,1), 1)
+            self.obs_list_stacked = numpy.append(self.obs_list_stacked, self.obs.obst, 1)
+            self.n_skipped_count += 1
 
-        self.obs_list_stacked = numpy.append(self.obs_list_stacked, self.obs.obst, 1)
+        elif(self.n_skipped_count < self.n_skipped_frames):
+            self.obs_list_stacked[:, ((2*self.n_stacked_frames)-2):((2*self.n_stacked_frames))] = self.obs.obst
+            self.n_skipped_count += 1
+
+        elif(self.n_skipped_count == self.n_skipped_frames):
+            self.obs_list_stacked[:, ((2*self.n_stacked_frames)-2):((2*self.n_stacked_frames))] = self.obs.obst
+            self.n_skipped_count = 0
+        
 
         # print("The stacked obs list {}".format(self.obs_list_stacked))
         # print("The stacked obs list part {}".format(self.obs_list_stacked[:5,:]))
