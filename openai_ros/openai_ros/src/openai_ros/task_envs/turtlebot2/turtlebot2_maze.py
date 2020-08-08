@@ -65,7 +65,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         
         self.n_laser_discretization = rospy.get_param('/turtlebot2/n_laser_discretization',128)
         self.n_observations = rospy.get_param('/turtlebot2/n_observations',144)
-        self.min_range = rospy.get_param('/turtlebot2/min_range',0.5)
+        self.min_range = rospy.get_param('/turtlebot2/min_range',0.8)
         self.max_cost = rospy.get_param('/turtlebot2/max_cost',1)
         self.min_cost = rospy.get_param('/turtlebot2/min_cost',0)
         self.n_stacked_frames = rospy.get_param('/turtlebot2/n_stacked_frames',10)
@@ -132,7 +132,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         # Rewards
         self.forwards_reward = rospy.get_param("/turtlebot2/forwards_reward",5)
         self.invalid_penalty = rospy.get_param("/turtlebot2/invalid_penalty",20)
-        self.end_episode_points = rospy.get_param("/turtlebot2/end_episode_points",1500)
+        self.end_episode_points = rospy.get_param("/turtlebot2/end_episode_points",2000)
         self.goal_reaching_points = rospy.get_param("/turtlebot2/goal_reaching_points",500)
 
         self.cumulated_steps = 0.0
