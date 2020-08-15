@@ -69,7 +69,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.max_cost = rospy.get_param('/turtlebot2/max_cost',1)
         self.min_cost = rospy.get_param('/turtlebot2/min_cost',0)
         self.n_stacked_frames = rospy.get_param('/turtlebot2/n_stacked_frames',10)
-        self.n_skipped_frames = rospy.get_param('/turtlebot2/n_skipped_frames',10)
+        self.n_skipped_frames = rospy.get_param('/turtlebot2/n_skipped_frames',2)
 
         self.max_linear_speed = rospy.get_param('/turtlebot2/max_linear_speed',0.65)
         self.max_angular_speed = rospy.get_param('/turtlebot2/max_angular_speed',1)
