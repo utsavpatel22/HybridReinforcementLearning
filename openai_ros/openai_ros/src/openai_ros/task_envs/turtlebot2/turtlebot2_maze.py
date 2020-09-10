@@ -139,6 +139,16 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
 
         self.laser_filtered_pub = rospy.Publisher('/turtlebot'+str(robot_number)+'/laser/scan_filtered', LaserScan, queue_size=1)
         self.visualize_obs = True
+        if self.visualize_obs:
+           os.chdir("../")
+           if not os.path.isdir("observation_visualization"):
+               os.mkdir("observation_visualization")
+               os.chdir("observation_visualization")
+               os.mkdir("v")
+               os.mkdir("w")
+               os.mkdir("cost")
+               os.chdir("../")
+               os.chdir("src")
         self.episode_num = 0
         self.total_collisions = 0
         self.episode_collisions = 0
@@ -309,7 +319,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         w_normalized = w_normalized.astype(numpy.uint8)
         cost_normalized = (self.cost_matrix / max_cost_num) * 255
         cost_normalized = cost_normalized.astype(numpy.uint8)
-
+        
         cv2.imwrite("../observation_visualization/v/v_matrix_"+str(self.episode_num)+"_"+str(self.counter)+".jpg", v_normalized)
         cv2.imwrite("../observation_visualization/w/w_matrix_"+str(self.episode_num)+"_"+str(self.counter)+".jpg", w_normalized)
         cv2.imwrite("../observation_visualization/cost/cost_matrix_"+str(self.episode_num)+"_"+str(self.counter)+".jpg", cost_normalized)
