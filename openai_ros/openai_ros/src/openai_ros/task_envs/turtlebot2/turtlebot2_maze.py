@@ -149,6 +149,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                os.mkdir("cost")
                os.chdir("../")
                os.chdir("src")
+           else:
+               os.chdir("src")
         self.episode_num = 0
         self.total_collisions = 0
         self.episode_collisions = 0
