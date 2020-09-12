@@ -12,6 +12,8 @@ from openai_ros.task_envs.turtlebot2.config import Config
 from openai_ros.task_envs.turtlebot2.obstacles import Obstacles
 from openai_ros.task_envs.turtlebot2.dwa import DWA
 from openai_ros.gazebo_connection import GazeboConnection
+import cv2
+import os
 
 
 # The path is __init__.py of openai_ros, where we import the TurtleBot2MazeEnv directly
@@ -67,6 +69,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.max_cost = rospy.get_param('/turtlebot2/max_cost',1)
         self.min_cost = rospy.get_param('/turtlebot2/min_cost',0)
         self.n_stacked_frames = rospy.get_param('/turtlebot2/n_stacked_frames',10)
+        self.n_skipped_frames = rospy.get_param('/turtlebot2/n_skipped_frames',2)
 
         self.max_linear_speed = rospy.get_param('/turtlebot2/max_linear_speed',0.65)
         self.max_angular_speed = rospy.get_param('/turtlebot2/max_angular_speed',1)
@@ -129,12 +132,29 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         # Rewards
         self.forwards_reward = rospy.get_param("/turtlebot2/forwards_reward",5)
         self.invalid_penalty = rospy.get_param("/turtlebot2/invalid_penalty",20)
-        self.end_episode_points = rospy.get_param("/turtlebot2/end_episode_points",1000)
+        self.end_episode_points = rospy.get_param("/turtlebot2/end_episode_points",2000)
         self.goal_reaching_points = rospy.get_param("/turtlebot2/goal_reaching_points",500)
 
         self.cumulated_steps = 0.0
 
         self.laser_filtered_pub = rospy.Publisher('/turtlebot'+str(robot_number)+'/laser/scan_filtered', LaserScan, queue_size=1)
+        self.visualize_obs = True
+        if self.visualize_obs:
+           os.chdir("../")
+           if not os.path.isdir("observation_visualization"):
+               os.mkdir("observation_visualization")
+               os.chdir("observation_visualization")
+               os.mkdir("v")
+               os.mkdir("w")
+               os.mkdir("cost")
+               os.chdir("../")
+               os.chdir("src")
+           else:
+               os.chdir("src")
+        self.episode_num = 0
+        self.total_collisions = 0
+        self.episode_collisions = 0
+        self.n_skipped_count = 0
 
         
 
@@ -288,13 +308,24 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         """ Gets the distance to the goal
         """
         return math.sqrt((self.goal_pose["x"] - self.odom_dict["x"])**2 + (self.goal_pose["y"] - self.odom_dict["y"])**2)
-            
 
+
+    def viz_obs(self):
+        max_v_num = numpy.max(self.v_matrix)
+        max_w_num = numpy.max(self.w_matrix)
+        max_cost_num = numpy.max(self.cost_matrix)
+
+        v_normalized = (self.v_matrix / max_v_num) * 255
+        v_normalized = v_normalized.astype(numpy.uint8)
+        w_normalized = (self.w_matrix / max_w_num) * 255
+        w_normalized = w_normalized.astype(numpy.uint8)
+        cost_normalized = (self.cost_matrix / max_cost_num) * 255
+        cost_normalized = cost_normalized.astype(numpy.uint8)
         
-
-
-
-
+        cv2.imwrite("../observation_visualization/v/v_matrix_"+str(self.episode_num)+"_"+str(self.counter)+".jpg", v_normalized)
+        cv2.imwrite("../observation_visualization/w/w_matrix_"+str(self.episode_num)+"_"+str(self.counter)+".jpg", w_normalized)
+        cv2.imwrite("../observation_visualization/cost/cost_matrix_"+str(self.episode_num)+"_"+str(self.counter)+".jpg", cost_normalized)
+        self.counter = self.counter + 1
 
     def _init_env_variables(self):
         """
@@ -327,10 +358,19 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         cnfg = Config(odom_dict_init, self.goal_pose)
         obs_init = Obstacles(laser_scan.ranges, cnfg)
         self.obs_list_stacked = numpy.column_stack((obs_init.obst for _ in range(0, self.n_stacked_frames)))
+
+        self.counter = 1
+        self.episode_num = self.episode_num + 1
+
         init_obs = self._get_obs()
         self.previous_distance2goal = self._get_distance2goal()
         self.publish_filtered_laser_scan(   laser_original_data=laser_scan,
                                          new_filtered_laser_range=discretized_ranges)
+        self.total_collisions += self.episode_collisions
+        print("Total number of collsions ------------ {}".format(self.total_collisions))
+        self.episode_collisions = 0
+        self.n_skipped_count = 0
+        
 
 
 
@@ -394,9 +434,19 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         cnfg = Config(self.odom_dict, self.goal_pose)
         self.obs = Obstacles(laser_scan.ranges, cnfg)
 
-        self.obs_list_stacked = numpy.delete(self.obs_list_stacked, (0,1), 1)
+        if(self.n_skipped_count == 0):
+            self.obs_list_stacked = numpy.delete(self.obs_list_stacked, (0,1), 1)
+            self.obs_list_stacked = numpy.append(self.obs_list_stacked, self.obs.obst, 1)
+            self.n_skipped_count += 1
 
-        self.obs_list_stacked = numpy.append(self.obs_list_stacked, self.obs.obst, 1)
+        elif(self.n_skipped_count < self.n_skipped_frames):
+            self.obs_list_stacked[:, ((2*self.n_stacked_frames)-2):((2*self.n_stacked_frames))] = self.obs.obst
+            self.n_skipped_count += 1
+
+        elif(self.n_skipped_count == self.n_skipped_frames):
+            self.obs_list_stacked[:, ((2*self.n_stacked_frames)-2):((2*self.n_stacked_frames))] = self.obs.obst
+            self.n_skipped_count = 0
+        
 
         # print("The stacked obs list {}".format(self.obs_list_stacked))
         # print("The stacked obs list part {}".format(self.obs_list_stacked[:5,:]))
@@ -407,6 +457,9 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         # print("The w_matrix after {}".format(self.w_matrix[:5,:]))
         # print("The w_matrix {}".format(self.w_matrix[:,self.n_stacked_frames - 1]))
         # print("The cost_matrix {}".format(self.cost_matrix[:,self.n_stacked_frames - 1]))
+
+        if (self.visualize_obs == True):
+        	self.viz_obs()
        
 
         self.stacked_obs = numpy.stack((self.v_matrix, self.w_matrix, self.cost_matrix), axis=2)
@@ -497,6 +550,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                     
                 if (self.min_range > item > 0):
                     rospy.logerr("done Validation >>> item=" + str(item)+"< "+str(self.min_range))
+                    if not self._episode_done:
+                        self.episode_collisions += 1
                     self._episode_done = True
                 else:
                     rospy.logwarn("NOT done Validation >>> item=" + str(item)+"< "+str(self.min_range))
