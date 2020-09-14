@@ -57,7 +57,7 @@ class CustomLSTMPolicy(LstmPolicy):
         # print(n_env)
         # print(n_steps)
         super(CustomLSTMPolicy, self).__init__(sess, ob_space, ac_space, n_env, n_steps, n_batch, n_lstm, reuse,
-                         layer_norm=True, feature_extraction="cnn", cnn_extractor=modified_nature_cnn,**_kwargs)
+                         layer_norm=True, feature_extraction="cnn", cnn_extractor=modified_shallow_nature_cnn,**_kwargs)
 
 
 # def __init__(self, sess, ob_space, ac_space, n_env, n_steps, n_batch, n_lstm=64, reuse=False, **_kwargs):
