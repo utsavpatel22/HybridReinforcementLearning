@@ -68,7 +68,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.min_range = rospy.get_param('/turtlebot2/min_range',0.5)
         self.max_cost = rospy.get_param('/turtlebot2/max_cost',1)
         self.min_cost = rospy.get_param('/turtlebot2/min_cost',0)
-        self.n_stacked_frames = rospy.get_param('/turtlebot2/n_stacked_frames',10)
+        self.n_stacked_frames = rospy.get_param('/turtlebot2/n_stacked_frames',1)
         self.n_skipped_frames = rospy.get_param('/turtlebot2/n_skipped_frames',2)
 
         self.max_linear_speed = rospy.get_param('/turtlebot2/max_linear_speed',0.65)
@@ -113,6 +113,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         # # We only use two integers
         # self.observation_space = spaces.Box(low, high)
 
+    # set limits
         v_list_high = numpy.full((self.n_observations,self.n_stacked_frames),self.max_linear_speed)
         w_list_high = numpy.full((self.n_observations,self.n_stacked_frames),self.max_angular_speed)
         cost_list_high = numpy.full((self.n_observations,self.n_stacked_frames),1)
@@ -358,6 +359,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         cnfg = Config(odom_dict_init, self.goal_pose)
         obs_init = Obstacles(laser_scan.ranges, cnfg)
         self.obs_list_stacked = numpy.column_stack((obs_init.obst for _ in range(0, self.n_stacked_frames)))
+        print("column shape:  ",self.obs_list_stacked.shape)
 
         self.counter = 1
         self.episode_num = self.episode_num + 1
@@ -462,8 +464,11 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         	self.viz_obs()
        
 
-        self.stacked_obs = numpy.stack((self.v_matrix, self.w_matrix, self.cost_matrix), axis=2)
-         
+        self.stacked_obs = numpy.vstack((self.v_matrix, self.w_matrix, self.cost_matrix))
+        # print(self.stacked_obs)
+        # print("shape: ", self.stacked_obs.shape, self.v_matrix.shape)
+        # import pdb
+        # pdb.set_trace()
 
         self.current_distance2goal = self._get_distance2goal()
         if (self.current_distance2goal < 0.5):
@@ -484,7 +489,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
             rospy.logdebug("Robot {} reached the goal".format(self.robot_number))
             
         else:
-            rospy.logdebug("TurtleBot2 is Ok ==>")
+            rospy.logdebuadar
+            g("TurtleBot2 is Ok ==>")
 
         return self._episode_done
 
