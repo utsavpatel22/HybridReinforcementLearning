@@ -50,14 +50,33 @@ def tiny_filter_deep_nature_cnn(scaled_images, **kwargs):
     return activ(linear(layer_7, 'fc3', n_hidden=128, init_scale=np.sqrt(2)))
 
 
+def modified_cnn(scaled_images, **kwargs):
+    """
+    CNN from Nature paper.
+    :param scaled_images: (TensorFlow Tensor) Image input placeholder
+    :param kwargs: (dict) Extra keywords parameters for the convolutional layers of the CNN
+    :return: (TensorFlow Tensor) The CNN output layer
+    """
+    activ = tf.nn.relu
+    layer_1 = activ(conv(scaled_images, 'c1', n_filters=8, filter_size=1, stride=1, init_scale=np.sqrt(2), **kwargs))
+    layer_2 = activ(conv(layer_1, 'c2', n_filters=16, filter_size=1, stride=1, init_scale=np.sqrt(2), **kwargs))
+    layer_2 = conv_to_fc(layer_2)
+    return activ(linear(layer_2, 'fc1', n_hidden=128, init_scale=np.sqrt(2)))
 
 
-class CustomLSTMPolicy(LstmPolicy):
+class CustomMLP_LSTMPolicy(LstmPolicy):
+    def __init__(self, sess, ob_space, ac_space, n_env, n_steps, n_batch, n_lstm=64, reuse=False, **_kwargs):
+        super().__init__(sess, ob_space, ac_space, n_env, n_steps, n_batch, n_lstm, reuse,
+                         net_arch=[144, 144, 'lstm', 144],
+                         layer_norm=True, feature_extraction="mlp", **_kwargs)
+
+
+class CustomCNN_LSTMPolicy(LstmPolicy):
     def __init__(self, sess, ob_space, ac_space, n_env, n_steps, n_batch, n_lstm=256, reuse=False, **_kwargs):
         # print(n_env)
         # print(n_steps)
         super(CustomLSTMPolicy, self).__init__(sess, ob_space, ac_space, n_env, n_steps, n_batch, n_lstm, reuse,
-                         layer_norm=True, feature_extraction="cnn", cnn_extractor=modified_shallow_nature_cnn,**_kwargs)
+                         layer_norm=True, feature_extraction="cnn", cnn_extractor=modified_cnn,**_kwargs)
 
 
 # def __init__(self, sess, ob_space, ac_space, n_env, n_steps, n_batch, n_lstm=64, reuse=False, **_kwargs):

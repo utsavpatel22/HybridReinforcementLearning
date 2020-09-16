@@ -25,7 +25,12 @@ if __name__ == '__main__':
 	rospy.init_node('stable_training', anonymous=True, log_level=rospy.WARN)
 	env_temp = TurtleBot2MazeEnv
 	env = SubprocVecEnv([lambda k=k:env_temp(world_file, k) for k in range(int(number_of_robots))])
-	model = PPO2(CustomLSTMPolicy, env, n_steps=900, ent_coef=0.01, learning_rate=0.0001, nminibatches=4, tensorboard_log="../PPO2_turtlebot_tensorboard/", verbose=1)
+	# obs = env.reset()
+	# print(obs.shape)
+	# import  pdb
+	# pdb.set_trace()
+	model = PPO2(CustomMLP_LSTMPolicy, env, n_steps=900, ent_coef=0.01, learning_rate=0.0001, nminibatches=1, tensorboard_log="../PPO2_turtlebot_tensorboard/", verbose=1)
+
 
 	# model = PPO2(CustomDeepCNNPolicy, env, n_steps=900, ent_coef=0.01, learning_rate=0.0001, nminibatches=5, tensorboard_log="../PPO2_turtlebot_tensorboard/", verbose=1)
 	model.learn(total_timesteps=1000000)
