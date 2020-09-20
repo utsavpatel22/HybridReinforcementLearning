@@ -4,6 +4,8 @@ import time
 import math
 from gym import spaces
 from openai_ros.robot_envs import turtlebot2_env
+from gazebo_msgs.msg import ModelStates
+from tf.transformations import euler_from_quaternion, quaternion_from_euler
 from gym.envs.registration import register
 from sensor_msgs.msg import LaserScan
 from std_msgs.msg import Header
@@ -61,8 +63,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.angular_speed = rospy.get_param('/turtlebot2/angular_speed',0.1)
         self.init_linear_forward_speed = rospy.get_param('/turtlebot2/init_linear_forward_speed',0.3)
         self.init_linear_turn_speed = rospy.get_param('/turtlebot2/init_linear_turn_speed',0.4)
-        
-        
+
         self.n_laser_discretization = rospy.get_param('/turtlebot2/n_laser_discretization',128)
         self.n_observations = rospy.get_param('/turtlebot2/n_observations',144)
         self.min_range = rospy.get_param('/turtlebot2/min_range',0.8)
@@ -80,10 +81,13 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.robot_number = robot_number
         self._get_goal_location()
 
-
+        self.pedestrians_index = {}
         
         # Here we will add any init functions prior to starting the MyRobotEnv
         self._get_init_pose()
+        print(" states::::::::::::::::::::::::::::::::::",   self.pedestrians_index["4_robot_3D1P"][0],self.pedestrians_index["4_robot_3D1P"][1],self.pedestrians_index["4_robot_3D1P"][2],self.pedestrians_index["4_robot_3D1P"][3]  )
+        import pdb
+        pdb.set_trace()
         super(TurtleBot2MazeEnv, self).__init__(robot_number=robot_number, initial_pose = self.initial_pose)
 
         self.gazebo = GazeboConnection(start_init_physics_parameters= True, robot_number = self.robot_number , initial_pose = self.initial_pose, reset_world_or_sim="ROBOT")
@@ -138,6 +142,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.cumulated_steps = 0.0
 
         self.laser_filtered_pub = rospy.Publisher('/turtlebot'+str(robot_number)+'/laser/scan_filtered', LaserScan, queue_size=1)
+        rospy.Subscriber("/gazebo/model_states", ModelStates, self.callback_modelstates)
         self.visualize_obs = True
         if self.visualize_obs:
            os.chdir("../")
@@ -156,9 +161,92 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.episode_collisions = 0
         self.n_skipped_count = 0
 
-        
-
-        
+    # def callback_modelstates(self, msg):
+    #
+    #     #  Relevant pedestrian positions and walking directions
+    #     # if (self.counter % 100 == 0 and self.before == False):
+    #     #     # print("Inside model states callback")
+    #     #     self.counter = self.counter + 1
+    #
+    #     self.relevant_names = []
+    #     self.relevant_positions = []
+    #     self.relevant_vectors = []
+    #
+    #     for i in range(len(msg.name)):
+    #         if (msg.name[i][0:9] == "turtlebot"):
+    #             x = msg.pose[i].orientation.x
+    #             y = msg.pose[i].orientation.y
+    #             z = msg.pose[i].orientation.z
+    #             w = msg.pose[i].orientation.w
+    #             orientation_list = [x, y, z, w]
+    #
+    #             (_, _, self.rob_theta) = euler_from_quaternion(orientation_list)
+    #             # rob_vec = np.array([math.cos(rob_theta), math.sin(rob_theta)])
+    #
+    #             x = msg.pose[i].position.x
+    #             y = msg.pose[i].position.y
+    #             self.rob_pos = [x, y]
+    #
+    #             if (self.ROB_POS_FLAG == False):
+    #                 self.ROB_POS_FLAG = True
+    #                 print("Obtained Robot's position")
+    #
+    #         # Get all pedestrian vectors and positions
+    #         if (self.ROB_POS_FLAG == True):
+    #             # if (msg.name[i][0:2] == "r2"):
+    #             if (msg.name[i][0:5] == "actor"):
+    #
+    #                 # Right now we get only orientation. Ideally we should get direction of velocities
+    #                 # x = msg.pose[i].orientation.x
+    #                 # y = msg.pose[i].orientation.y
+    #                 # z = msg.pose[i].orientation.z
+    #                 # w = msg.pose[i].orientation.w
+    #                 x = msg.pose[i].orientation.z
+    #                 y = msg.pose[i].orientation.x
+    #                 z = msg.pose[i].orientation.y
+    #                 w = msg.pose[i].orientation.w
+    #                 orientation_list = [x, y, z, w]
+    #
+    #                 # NOTE: Always check which side of the gazebo model is defined as front. For person_walking front of model is actually its backside
+    #                 (_, _, self.ped_theta) = euler_from_quaternion(orientation_list)
+    #                 self.ped_theta = self.ped_theta - math.pi / 2
+    #                 # print("Pedestrian heading direction %f" % (self.ped_theta))
+    #                 ped_vec = np.array([math.cos(self.ped_theta), math.sin(self.ped_theta)])  # unit vector
+    #
+    #                 # Get pedestrian position wrt global coordinates
+    #                 x = msg.pose[i].position.x
+    #                 y = msg.pose[i].position.y
+    #                 self.ped_pos = [x, y]
+    #
+    #                 # Compute relative position of ped wrt unrotated robot
+    #                 rel_x = self.ped_pos[0] - self.rob_pos[0]
+    #                 rel_y = self.ped_pos[1] - self.rob_pos[1]
+    #
+    #                 # Compute relative position of ped wrt rotated robot
+    #                 rel_x_rot = rel_x * math.cos(self.rob_theta) + rel_y * math.sin(self.rob_theta)
+    #                 rel_y_rot = -rel_x * math.sin(self.rob_theta) + rel_y * math.cos(self.rob_theta)
+    #                 rel_ped_pos = [rel_x_rot, rel_y_rot]
+    #
+    #                 # Compute relative yaw angle (orientation) of ped wrt robot
+    #                 rel_theta = self.ped_theta - self.rob_theta
+    #
+    #                 # compute unit vector of pedestrian relative to rotated robot
+    #                 rel_ped_vec = [math.cos(rel_theta), math.sin(rel_theta)]
+    #
+    #                 # Checking relevancy
+    #                 relevant_result = self.check_relevancy(rel_x_rot, rel_y_rot, rel_ped_vec)
+    #                 # relevant_result = True
+    #
+    #                 if (relevant_result == True):
+    #                     # Add current location to an array
+    #                     self.relevant_names.append(msg.name[i])
+    #                     self.relevant_positions.append(rel_ped_pos)
+    #                     self.relevant_vectors.append(rel_ped_vec)
+    #
+    #     # else:
+    #     #     self.counter = self.counter + 1
+    #     #     if (self.counter > 999):
+    #     #         self.counter = 0
 
     def _set_init_pose(self):
         """Sets the Robot in its init pose
@@ -217,6 +305,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
             self.initial_pose["y_rot_init"] = 0
             self.initial_pose["z_rot_init"] = 0
             self.initial_pose["w_rot_init"] = 1
+            self.pedestrians_index["zigzag_3ped"] = {0 : [0,1,2]}
 
         elif (self.world_file_name == "4_robot_3D1P"):
 
@@ -227,7 +316,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 self.initial_pose["y_rot_init"] = 0
                 self.initial_pose["z_rot_init"] = 0
                 self.initial_pose["w_rot_init"] = 1
-
+                self.pedestrians_index["4_robot_3D1P"] = {0 : [0,1]}
             elif (self.robot_number == 1):
                 self.initial_pose["x_init"] = 1.18
                 self.initial_pose["y_init"] = 12.13
@@ -235,6 +324,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 self.initial_pose["y_rot_init"] = 0
                 self.initial_pose["z_rot_init"] = 0
                 self.initial_pose["w_rot_init"] = 1
+                self.pedestrians_index["4_robot_3D1P"][1] = [2,3]
 
             elif(self.robot_number == 2):
                 self.initial_pose["x_init"] = -10.085
@@ -243,7 +333,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 self.initial_pose["y_rot_init"] = 0
                 self.initial_pose["z_rot_init"] = 1
                 self.initial_pose["w_rot_init"] = 0.001
-
+                self.pedestrians_index["4_robot_3D1P"][2] = []
             elif(self.robot_number == 3):
                 self.initial_pose["x_init"] = -11.0
                 self.initial_pose["y_init"] = -0.03
@@ -251,7 +341,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 self.initial_pose["y_rot_init"] = 0
                 self.initial_pose["z_rot_init"] = 1
                 self.initial_pose["w_rot_init"] = 0.001
-
+                self.pedestrians_index["4_robot_3D1P"][3] = [4]
         return self.initial_pose
 
 
