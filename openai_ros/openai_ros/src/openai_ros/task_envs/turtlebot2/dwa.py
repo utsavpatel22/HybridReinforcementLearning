@@ -82,7 +82,7 @@ def calc_final_input(x, u, dw, config, ob, num_stacked_frames):
             w_list.append(w)
             cost_matrix = np.append(cost_matrix,final_cost, axis = 0)    
 
-    #cost_list, v_list, w_list, cost_matrix = zip(*sorted(zip(cost_matrix[:,num_stacked_frames - 1], v_list, w_list, cost_matrix))) # Change 5 with a parameter
+    cost_list, v_list, w_list, cost_matrix = zip(*sorted(zip(cost_matrix[:,num_stacked_frames - 1], v_list, w_list, cost_matrix))) # Change 5 with a parameter
 
     cost_matrix = np.asarray(cost_matrix)
     max_cost = np.max(cost_matrix)
