@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 import sys
-sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
+sys.path.remove('/opt/ros/melodic/lib/python2.7/dist-packages')
 import gym
 from stable_baselines.common.policies import FeedForwardPolicy, register_policy
 from stable_baselines.common.vec_env import SubprocVecEnv
 from stable_baselines import PPO2
-sys.path.append('/opt/ros/kinetic/lib/python2.7/dist-packages')
+sys.path.append('/opt/ros/melodic/lib/python2.7/dist-packages')
 from openai_ros.task_envs.turtlebot2.turtlebot2_maze import TurtleBot2MazeEnv
 import rospy
 import os
@@ -25,6 +25,6 @@ if __name__ == '__main__':
 	rospy.init_node('stable_training', anonymous=True, log_level=rospy.WARN)
 	env_temp = TurtleBot2MazeEnv
 	env = SubprocVecEnv([lambda k=k:env_temp(world_file, k) for k in range(int(number_of_robots))])
-	model = PPO2(CustomDeepCNNPolicy, env, n_steps=900, ent_coef=0.01, learning_rate=0.0001, nminibatches=5, tensorboard_log="../PPO2_turtlebot_tensorboard/", verbose=1)
-	model.learn(total_timesteps=1000000)
+	model = PPO2(CustomTinyDeepCNNPolicy, env, n_steps=900, ent_coef=0.01, learning_rate=0.0001, nminibatches=5, tensorboard_log="../PPO2_turtlebot_tensorboard/", verbose=1)
+	model.learn(total_timesteps=1500000)
 	model.save("ppo2_turtlebot")
