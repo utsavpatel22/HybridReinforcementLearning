@@ -1,5 +1,5 @@
-
 #!/usr/bin/env python
+
 import rospy
 import numpy
 import time
@@ -177,6 +177,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
 
         return True
 
+
     def _get_init_pose(self):
         """ Gets the initial location of the robot to reset
         """
@@ -263,7 +264,31 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         return self.initial_pose
 
 
-    def _get_goal_location(self):
+def compute_distance():
+
+    return 0,0
+
+def compute_sideV():
+    return False
+
+def temporal_rewards(self):
+    reward = 0
+    for key in self.pedestrians_index[self.world_file_name]:
+        for ped in self.pedestrians_index[self.world_file_name][key]:
+            print(" pedestrian: ", ped)
+
+            R, H = self.compute_distance()
+            sideV = self.compute_sideV()
+
+
+
+
+
+    return reward
+
+
+
+def _get_goal_location(self):
         """ Gets the goal location for each robot
         """
         self.goal_pose = {}
