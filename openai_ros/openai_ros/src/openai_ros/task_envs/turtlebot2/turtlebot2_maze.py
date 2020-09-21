@@ -85,7 +85,6 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
 
         self.pedestrians_info = {}
         self.pedestrians_info["4_robot_3D1P"] = {}
-        self.pedestrians_info["zigzag_3ped"] = {}
 
         self.pedestrian_pos = {}
 
@@ -237,7 +236,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 self.initial_pose["y_rot_init"] = 0
                 self.initial_pose["z_rot_init"] = 0
                 self.initial_pose["w_rot_init"] = 1
-                self.pedestrians_info["4_robot_3D1P"][0] = [0,1]
+                self.pedestrians_info["4_robot_3D1P"][0] = [[0, "Right"],[1, "Left"]]
             elif (self.robot_number == 1):
                 self.initial_pose["x_init"] = 1.18
                 self.initial_pose["y_init"] = 12.13
@@ -245,8 +244,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 self.initial_pose["y_rot_init"] = 0
                 self.initial_pose["z_rot_init"] = 0
                 self.initial_pose["w_rot_init"] = 1
-                self.pedestrians_info["4_robot_3D1P"][1] = [2,3]
-
+                self.pedestrians_info["4_robot_3D1P"][0] = [[3, "Right"],[2, "Left"]]
             elif(self.robot_number == 2):
                 self.initial_pose["x_init"] = -10.085
                 self.initial_pose["y_init"] = 12.15
@@ -262,7 +260,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 self.initial_pose["y_rot_init"] = 0
                 self.initial_pose["z_rot_init"] = 1
                 self.initial_pose["w_rot_init"] = 0.001
-                self.pedestrians_info["4_robot_3D1P"][3] = [4]
+                self.pedestrians_info["4_robot_3D1P"][3] = [[0, "Straight"]]
+
         return self.initial_pose
 
 
@@ -296,11 +295,14 @@ def temporal_rewards(self):
     R_min = 0.6
     R_max = 1.5
     for robot_id in self.pedestrians_info[self.world_file_name]:
-        for ped_id in self.pedestrians_info[self.world_file_name][robot_id]:
+        for i in self.pedestrians_info[self.world_file_name][robot_id]:
+            # i[0] -> pedestrian id
+            # i[1] -> direction of pedestrian
+            ped_id = i[0]
             print(" pedestrian: ", ped_id)
 
             H, V, R = self.compute_distance(self.robot_pose[robot_id],self.pedestrian_pos[ped_id])
-            sideV = self.compute_side(V, self.pedestrians_info[self.world_file_name][robot_id][direction])
+            sideV = self.compute_side(V, i[1])
             sideH =  H < 0 and abs(H) > H_threshold
 
             if (R_min < R < R_max) and sideV and sideH:
