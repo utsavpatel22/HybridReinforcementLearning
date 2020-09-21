@@ -292,7 +292,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
     def temporal_rewards(self):
         reward = 0
         self.proximal_penalty = -8
-        self.heading_penalty = -30
+        self.heading_penalty = -25
         reward1 = 0
         H_threshold = .5
         R_min = 0.6
