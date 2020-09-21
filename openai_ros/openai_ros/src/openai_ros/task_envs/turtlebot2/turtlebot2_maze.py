@@ -92,9 +92,6 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         
         # Here we will add any init functions prior to starting the MyRobotEnv
         self._get_init_pose()
-        print(" states::::::::::::::::::::::::::::::::::",   self.pedestrians_info["4_robot_3D1P"][1],self.pedestrians_info["4_robot_3D1P"][1],self.pedestrians_info["4_robot_3D1P"][2],self.pedestrians_info["4_robot_3D1P"][3]  )
-        import pdb
-        pdb.set_trace()
         super(TurtleBot2MazeEnv, self).__init__(robot_number=robot_number, initial_pose = self.initial_pose)
 
         self.gazebo = GazeboConnection(start_init_physics_parameters= True, robot_number = self.robot_number , initial_pose = self.initial_pose, reset_world_or_sim="ROBOT")
@@ -228,6 +225,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
             self.initial_pose["w_rot_init"] = 1
             self.pedestrians_info["zigzag_3ped"][0] = [0,1,2]
 
+
         elif (self.world_file_name == "4_robot_3D1P"):
 
             if (self.robot_number == 0):
@@ -238,6 +236,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 self.initial_pose["z_rot_init"] = 0
                 self.initial_pose["w_rot_init"] = 1
                 self.pedestrians_info["4_robot_3D1P"][0] = [[0, "Right"],[1, "Left"]]
+                print("robot 0: ",self.pedestrians_info["4_robot_3D1P"][0])
             elif (self.robot_number == 1):
                 self.initial_pose["x_init"] = 1.18
                 self.initial_pose["y_init"] = 12.13
@@ -246,6 +245,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 self.initial_pose["z_rot_init"] = 0
                 self.initial_pose["w_rot_init"] = 1
                 self.pedestrians_info["4_robot_3D1P"][1] = [[3, "Right"],[2, "Left"]]
+                print("robot 1, ",self.pedestrians_info["4_robot_3D1P"][1])
             elif(self.robot_number == 2):
                 self.initial_pose["x_init"] = -10.085
                 self.initial_pose["y_init"] = 12.15
@@ -266,116 +266,125 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         return self.initial_pose
 
 
-def compute_distance(self, posR, posP):
-    # V is computed using wrt Y axis
-    # Height H is computed wrt X axis
-    # Note V and H are computed wrt robot xR - XPed
+    def compute_distance(self, posR, posP):
+        # V is computed using wrt Y axis
+        # Height H is computed wrt X axis
+        # Note V and H are computed wrt robot xR - XPed
 
-    H = posR["x"] - posP[0]
-    V = posR["y"] - posP[1]
-    R = numpy.sqrt(H^2 + V^2 )
+        H = posR["x"] - posP[0]
+        V = posR["y"] - posP[1]
+        R = numpy.sqrt(H**2 + V**2 )
 
-    return H, V, R
+        return H, V, R
 
-def compute_side(self, V, direction):
-    # V is computed using wrt Y axis
-    # Chooses pedestrian moving towards the current location of the robot
-    # If pedestrian moves towards left direction and robot is already in left of pedestrian
+    def compute_side(self, V, direction):
+        # V is computed using wrt Y axis
+        # Chooses pedestrian moving towards the current location of the robot
+        # If pedestrian moves towards left direction and robot is already in left of pedestrian
 
-    if V < 0 and (direction == "Left"):
-        return True
-    elif V > 0 and (direction == "Right"):
-        return True
-    return False
+        if V < 0 and (direction == "Left"):
+            return True
+        elif V > 0 and (direction == "Right"):
+            return True
+        return False
 
-def temporal_rewards(self):
-    reward = 0
-    self.proximal_penalty = -8
-    self.heading_penalty = -30
-    H_threshold = .5
-    R_min = 0.6
-    R_max = 1.5
-    for robot_id in self.pedestrians_info[self.world_file_name]:
-        for i in self.pedestrians_info[self.world_file_name][robot_id]:
-            # i[0] -> pedestrian id
-            # i[1] -> direction of pedestrian
-            ped_id = i[0]
-            print(" pedestrian: ", ped_id)
+    def temporal_rewards(self):
+        reward = 0
+        self.proximal_penalty = -8
+        self.heading_penalty = -30
+        reward1 = 0
+        H_threshold = .5
+        R_min = 0.6
+        R_max = 1.5
+        for robot_id in self.pedestrians_info[self.world_file_name]:
+            for i in self.pedestrians_info[self.world_file_name][robot_id]:
+                # i[0] -> pedestrian id
+                # i[1] -> direction of pedestrian
+                ped_id = i[0]
 
-            H, V, R = self.compute_distance(self.odom_dict,self.pedestrian_pose[ped_id])
-            sideV = self.compute_side(V, i[1])
-            sideH =  H < 0 and abs(H) > H_threshold
 
-            if (R_min < R < R_max) and sideV and sideH:
-                reward += (1/R) * self.proximal_penalty + V * self.heading_penalty
-    return reward
+                H, V, R = self.compute_distance(self.odom_dict,self.pedestrian_pose[ped_id])
+                sideV = self.compute_side(V, i[1])
+                sideH =  H < 0 and abs(H) > H_threshold
 
-def callback_modelstates(self, msg):
-#     self.relevant_names = []
-#     self.relevant_positions = []
-#     self.relevant_vectors = []
+                if (R_min < R < R_max) and sideV and sideH:
+                    reward1 = (1/R) * self.proximal_penalty + V * self.heading_penalty
+                    reward += reward1
+                if robot_id == 0 and reward1 != 0:
+                    print(" pedestrian: ", ped_id)
+                    print("Robot number {}".format(robot_id))
+                    print("Ped direction ", i[1])
+                    print("Side V ", sideV)
+                    print("Side H ", sideH)
+                    print("reward: ", reward1)
+        return reward
 
-    for i in range(len(msg.name)):
-        if (msg.name[i][0:5] == "actor"):
-            actor_id = msg.name[i][5] - '0'
+    def callback_modelstates(self, msg):
+    #     self.relevant_names = []
+    #     self.relevant_positions = []
+    #     self.relevant_vectors = []
 
-            x = msg.pose[i].position.x
-            y = msg.pose[i].position.y
-            z = msg.pose[i].position.z
-            # w = msg.pose[i].orientation.w
-            print(x,y,z)
-            # q = Quaternion(odom_data_init.pose.pose.orientation.w, odom_data_init.pose.pose.orientation.x,
-            #                odom_data_init.pose.pose.orientation.y, odom_data_init.pose.pose.orientation.z)
-            # e = q.to_euler(degrees=False)
-            self.pedestrian_pose[actor_id] = [x,y]
+        for i in range(len(msg.name)):
+            if (msg.name[i][0:5] == "actor"):
+                actor_id = int(msg.name[i][5])
 
-def _get_goal_location(self):
-        """ Gets the goal location for each robot
-        """
-        self.goal_pose = {}
-        if(self.world_file_name == "maze"):
-            if (self.robot_number == 0):
-               self.goal_pose["x"] = 8
-               self.goal_pose["y"] = 2.5
-            
+                x = msg.pose[i].position.x
+                y = msg.pose[i].position.y
+                z = msg.pose[i].position.z
+                # w = msg.pose[i].orientation.w
+                # print("actor pose",x,y,z)
+                # q = Quaternion(odom_data_init.pose.pose.orientation.w, odom_data_init.pose.pose.orientation.x,
+                #                odom_data_init.pose.pose.orientation.y, odom_data_init.pose.pose.orientation.z)
+                # e = q.to_euler(degrees=False)
+                self.pedestrian_pose[actor_id] = [x,y]
 
-            elif (self.robot_number == 1):
-               self.goal_pose["x"] = -1
-               self.goal_pose["y"] = 7
-            
+    def _get_goal_location(self):
+            """ Gets the goal location for each robot
+            """
+            self.goal_pose = {}
+            if(self.world_file_name == "maze"):
+                if (self.robot_number == 0):
+                   self.goal_pose["x"] = 8
+                   self.goal_pose["y"] = 2.5
+                
 
-            elif(self.robot_number == 2):
-               self.goal_pose["x"] = 5.5
-               self.goal_pose["y"] = -7.5
-            
+                elif (self.robot_number == 1):
+                   self.goal_pose["x"] = -1
+                   self.goal_pose["y"] = 7
+                
 
-            elif(self.robot_number == 3):
-               self.goal_pose["x"] = -4
-               self.goal_pose["y"] = -11.5
+                elif(self.robot_number == 2):
+                   self.goal_pose["x"] = 5.5
+                   self.goal_pose["y"] = -7.5
+                
 
-        elif(self.world_file_name == "zigzag_3ped"):
-           self.goal_pose["x"] = 12.5
-           self.goal_pose["y"] = 0
+                elif(self.robot_number == 3):
+                   self.goal_pose["x"] = -4
+                   self.goal_pose["y"] = -11.5
 
-        elif(self.world_file_name == "4_robot_3D1P"):
-            if (self.robot_number == 0):
-               self.goal_pose["x"] = 14.81
-               self.goal_pose["y"] = 0.24
-            
+            elif(self.world_file_name == "zigzag_3ped"):
+               self.goal_pose["x"] = 12.5
+               self.goal_pose["y"] = 0
 
-            elif (self.robot_number == 1):
-               self.goal_pose["x"] = 15.0
-               self.goal_pose["y"] = 12.13
-            
+            elif(self.world_file_name == "4_robot_3D1P"):
+                if (self.robot_number == 0):
+                   self.goal_pose["x"] = 14.81
+                   self.goal_pose["y"] = 0.24
+                
 
-            elif(self.robot_number == 2):
-               self.goal_pose["x"] = -24.23
-               self.goal_pose["y"] = 11.14
-            
+                elif (self.robot_number == 1):
+                   self.goal_pose["x"] = 15.0
+                   self.goal_pose["y"] = 12.13
+                
 
-            elif(self.robot_number == 3):
-               self.goal_pose["x"] = -24.39
-               self.goal_pose["y"] = 1.021
+                elif(self.robot_number == 2):
+                   self.goal_pose["x"] = -24.23
+                   self.goal_pose["y"] = 11.14
+                
+
+                elif(self.robot_number == 3):
+                   self.goal_pose["x"] = -24.39
+                   self.goal_pose["y"] = 1.021
 
 
     def _get_distance2goal(self):
@@ -569,7 +578,7 @@ def _get_goal_location(self):
 
         reward += 200*(self.previous_distance2goal - self.current_distance2goal)
         reward += self.temporal_rewards()
-        print("temporal reward value:::",temporal_rewards())
+        # print("temporal reward value:::",self.temporal_rewards())
 
         self.previous_distance2goal = self.current_distance2goal
 
