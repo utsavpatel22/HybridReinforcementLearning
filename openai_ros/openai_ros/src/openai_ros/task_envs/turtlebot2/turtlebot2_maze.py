@@ -290,6 +290,21 @@ def compute_side(self, V, direction):
 
 def temporal_rewards(self):
     reward = 0
+    self.proximal_penalty = 20
+    self.heading_penalty = 20
+    H_threshold = .2
+    R_min = 0.6
+    R_max = 1.5
+    for robot_id in self.pedestrians_info[self.world_file_name]:
+        for ped_id in self.pedestrians_info[self.world_file_name][robot_id]:
+            print(" pedestrian: ", ped_id)
+
+            H, V, R = self.compute_distance(self.robot_pose[robot_id],self.pedestrian_pos[ped_id])
+            sideV = self.compute_side(V, self.pedestrians_info[self.world_file_name][robot_id][direction])
+            sideH =  H < 0 and abs(H) > H_threshold
+
+            if (R_min < R < R_max) and sideV and sideH:
+                reward += (1/R)* self.proximal_penalty + V * self.heading_penalty
     return reward
 
 def callback_modelstates(self, msg):
