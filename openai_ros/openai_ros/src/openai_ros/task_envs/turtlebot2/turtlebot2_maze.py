@@ -290,9 +290,9 @@ def compute_side(self, V, direction):
 
 def temporal_rewards(self):
     reward = 0
-    self.proximal_penalty = 20
-    self.heading_penalty = 20
-    H_threshold = .2
+    self.proximal_penalty = -8
+    self.heading_penalty = -30
+    H_threshold = .5
     R_min = 0.6
     R_max = 1.5
     for robot_id in self.pedestrians_info[self.world_file_name]:
@@ -568,6 +568,8 @@ def _get_goal_location(self):
 
 
         reward += 200*(self.previous_distance2goal - self.current_distance2goal)
+        reward += self.temporal_rewards()
+        print("temporal reward value:::",temporal_rewards())
 
         self.previous_distance2goal = self.current_distance2goal
 
@@ -580,6 +582,7 @@ def _get_goal_location(self):
 
         elif self._episode_done and self._reached_goal:
             reward += self.goal_reaching_points
+
 
         rospy.logdebug("reward=" + str(reward))
         self.cumulated_reward += reward
