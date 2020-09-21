@@ -86,7 +86,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.pedestrians_info = {}
         self.pedestrians_info["4_robot_3D1P"] = {}
 
-        self.pedestrian_pos = {}
+        self.pedestrian_pose = {}
+        # self.robot_pose = {}
 
         
         # Here we will add any init functions prior to starting the MyRobotEnv
@@ -244,7 +245,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 self.initial_pose["y_rot_init"] = 0
                 self.initial_pose["z_rot_init"] = 0
                 self.initial_pose["w_rot_init"] = 1
-                self.pedestrians_info["4_robot_3D1P"][0] = [[3, "Right"],[2, "Left"]]
+                self.pedestrians_info["4_robot_3D1P"][1] = [[3, "Right"],[2, "Left"]]
             elif(self.robot_number == 2):
                 self.initial_pose["x_init"] = -10.085
                 self.initial_pose["y_init"] = 12.15
@@ -270,8 +271,8 @@ def compute_distance(self, posR, posP):
     # Height H is computed wrt X axis
     # Note V and H are computed wrt robot xR - XPed
 
-    H = posR[0] - posP[0]
-    V = posR[1] - posP[1]
+    H = posR["x"] - posP[0]
+    V = posR["y"] - posP[1]
     R = numpy.sqrt(H^2 + V^2 )
 
     return H, V, R
@@ -301,12 +302,12 @@ def temporal_rewards(self):
             ped_id = i[0]
             print(" pedestrian: ", ped_id)
 
-            H, V, R = self.compute_distance(self.robot_pose[robot_id],self.pedestrian_pos[ped_id])
+            H, V, R = self.compute_distance(self.odom_dict,self.pedestrian_pose[ped_id])
             sideV = self.compute_side(V, i[1])
             sideH =  H < 0 and abs(H) > H_threshold
 
             if (R_min < R < R_max) and sideV and sideH:
-                reward += (1/R)* self.proximal_penalty + V * self.heading_penalty
+                reward += (1/R) * self.proximal_penalty + V * self.heading_penalty
     return reward
 
 def callback_modelstates(self, msg):
@@ -315,80 +316,18 @@ def callback_modelstates(self, msg):
 #     self.relevant_vectors = []
 
     for i in range(len(msg.name)):
-        if (msg.name[i][0:9] == "turtlebot"):
-            x = msg.pose[i].orientation.x
-            y = msg.pose[i].orientation.y
-            z = msg.pose[i].orientation.z
-            w = msg.pose[i].orientation.w
-            orientation_list = [x, y, z, w]
-#
-#             (_, _, self.rob_theta) = euler_from_quaternion(orientation_list)
-#             # rob_vec = np.array([math.cos(rob_theta), math.sin(rob_theta)])
-#
-#             x = msg.pose[i].position.x
-#             y = msg.pose[i].position.y
-#             self.rob_pos = [x, y]
-#
-#             if (self.ROB_POS_FLAG == False):
-#                 self.ROB_POS_FLAG = True
-#                 print("Obtained Robot's position")
-#
-#         # Get all pedestrian vectors and positions
-#         if (self.ROB_POS_FLAG == True):
-#             # if (msg.name[i][0:2] == "r2"):
-#             if (msg.name[i][0:5] == "actor"):
-#
-#                 # Right now we get only orientation. Ideally we should get direction of velocities
-#                 # x = msg.pose[i].orientation.x
-#                 # y = msg.pose[i].orientation.y
-#                 # z = msg.pose[i].orientation.z
-#                 # w = msg.pose[i].orientation.w
-#                 x = msg.pose[i].orientation.z
-#                 y = msg.pose[i].orientation.x
-#                 z = msg.pose[i].orientation.y
-#                 w = msg.pose[i].orientation.w
-#                 orientation_list = [x, y, z, w]
-#
-#                 # NOTE: Always check which side of the gazebo model is defined as front. For person_walking front of model is actually its backside
-#                 (_, _, self.ped_theta) = euler_from_quaternion(orientation_list)
-#                 self.ped_theta = self.ped_theta - math.pi / 2
-#                 # print("Pedestrian heading direction %f" % (self.ped_theta))
-#                 ped_vec = np.array([math.cos(self.ped_theta), math.sin(self.ped_theta)])  # unit vector
-#
-#                 # Get pedestrian position wrt global coordinates
-#                 x = msg.pose[i].position.x
-#                 y = msg.pose[i].position.y
-#                 self.ped_pos = [x, y]
-#
-#                 # Compute relative position of ped wrt unrotated robot
-#                 rel_x = self.ped_pos[0] - self.rob_pos[0]
-#                 rel_y = self.ped_pos[1] - self.rob_pos[1]
-#
-#                 # Compute relative position of ped wrt rotated robot
-#                 rel_x_rot = rel_x * math.cos(self.rob_theta) + rel_y * math.sin(self.rob_theta)
-#                 rel_y_rot = -rel_x * math.sin(self.rob_theta) + rel_y * math.cos(self.rob_theta)
-#                 rel_ped_pos = [rel_x_rot, rel_y_rot]
-#
-#                 # Compute relative yaw angle (orientation) of ped wrt robot
-#                 rel_theta = self.ped_theta - self.rob_theta
-#
-#                 # compute unit vector of pedestrian relative to rotated robot
-#                 rel_ped_vec = [math.cos(rel_theta), math.sin(rel_theta)]
-#
-#                 # Checking relevancy
-#                 relevant_result = self.check_relevancy(rel_x_rot, rel_y_rot, rel_ped_vec)
-#                 # relevant_result = True
-#
-#                 if (relevant_result == True):
-#                     # Add current location to an array
-#                     self.relevant_names.append(msg.name[i])
-#                     self.relevant_positions.append(rel_ped_pos)
-#                     self.relevant_vectors.append(rel_ped_vec)
-#
-#     # else:
-#     #     self.counter = self.counter + 1
-#     #     if (self.counter > 999):
-#     #         self.counter = 0
+        if (msg.name[i][0:5] == "actor"):
+            actor_id = msg.name[i][5] - '0'
+
+            x = msg.pose[i].position.x
+            y = msg.pose[i].position.y
+            z = msg.pose[i].position.z
+            # w = msg.pose[i].orientation.w
+            print(x,y,z)
+            # q = Quaternion(odom_data_init.pose.pose.orientation.w, odom_data_init.pose.pose.orientation.x,
+            #                odom_data_init.pose.pose.orientation.y, odom_data_init.pose.pose.orientation.z)
+            # e = q.to_euler(degrees=False)
+            self.pedestrian_pose[actor_id] = [x,y]
 
 def _get_goal_location(self):
         """ Gets the goal location for each robot
