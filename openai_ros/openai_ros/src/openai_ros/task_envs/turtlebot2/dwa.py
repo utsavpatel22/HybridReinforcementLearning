@@ -62,6 +62,8 @@ def calc_final_input(x, u, dw, config, ob, num_stacked_frames):
     w_list = []
     cost_list = []
     cost_matrix = np.empty((0,num_stacked_frames), int)
+    obst_cost_matrix = np.empty((0,num_stacked_frames), int)
+    to_goal_cost_matrix = np.empty((0,num_stacked_frames), int)
     v_reso = (dw[1] - dw[0]) / 12
     yawrate_reso = (dw[3] - dw[2]) / 12
     # evaluate all trajectory with sampled input in dynamic window
@@ -80,13 +82,23 @@ def calc_final_input(x, u, dw, config, ob, num_stacked_frames):
             final_cost = to_goal_cost + speed_cost + ob_cost
             v_list.append(v)
             w_list.append(w)
-            cost_matrix = np.append(cost_matrix,final_cost, axis = 0)    
+            cost_matrix = np.append(cost_matrix,final_cost, axis = 0)
+            obst_cost_matrix = np.append(obst_cost_matrix, ob_cost, axis = 0)
+            to_goal_cost_matrix = np.append(to_goal_cost_matrix, to_goal_cost, axis = 0)    
 
-    cost_list, v_list, w_list, cost_matrix = zip(*sorted(zip(cost_matrix[:,num_stacked_frames - 1], v_list, w_list, cost_matrix))) # Change 5 with a parameter
+    cost_list, v_list, w_list, cost_matrix, obst_cost_matrix, to_goal_cost_matrix = zip(*sorted(zip(cost_matrix[:,num_stacked_frames - 1], v_list, w_list, cost_matrix, obst_cost_matrix, to_goal_cost_matrix))) # Change 5 with a parameter
 
     cost_matrix = np.asarray(cost_matrix)
     max_cost = np.max(cost_matrix)
     cost_matrix_normalized = cost_matrix / max_cost
+
+    obst_cost_matrix = np.asarray(obst_cost_matrix)
+    max_obst_cost = np.max(obst_cost_matrix)
+    obst_cost_matrix_normalized = obst_cost_matrix / max_obst_cost
+
+    to_goal_cost_matrix = np.asarray(to_goal_cost_matrix)
+    max_to_goal_cost = np.max(to_goal_cost_matrix)
+    to_goal_cost_matrix_normalized = to_goal_cost_matrix / max_to_goal_cost
 
     np_v_list = np.asarray(v_list)
     np_v_list = np_v_list[:,np.newaxis]
@@ -96,7 +108,7 @@ def calc_final_input(x, u, dw, config, ob, num_stacked_frames):
     np_w_list = np_w_list[:,np.newaxis]
     w_matrix = np.tile(np_w_list, num_stacked_frames)
     
-    return v_matrix, w_matrix, cost_matrix_normalized
+    return v_matrix, w_matrix, cost_matrix_normalized, obst_cost_matrix_normalized, to_goal_cost_matrix_normalized
 
 # Calculate obstacle cost inf: collision, 0:free
 def calc_obstacle_cost(traj, ob, config):

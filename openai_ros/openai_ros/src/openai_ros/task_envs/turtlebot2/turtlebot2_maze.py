@@ -123,13 +123,17 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         v_list_high = numpy.full((self.n_observations,self.n_stacked_frames),self.max_linear_speed)
         w_list_high = numpy.full((self.n_observations,self.n_stacked_frames),self.max_angular_speed)
         cost_list_high = numpy.full((self.n_observations,self.n_stacked_frames),1)
+        obst_list_high = numpy.full((self.n_observations,self.n_stacked_frames),1)
+        to_goal_list_high = numpy.full((self.n_observations,self.n_stacked_frames),1)
 
         v_list_low = numpy.full((self.n_observations,self.n_stacked_frames),self.min_linear_speed)
         w_list_low = numpy.full((self.n_observations,self.n_stacked_frames),self.min_angular_speed)
         cost_list_low = numpy.full((self.n_observations,self.n_stacked_frames),0)
+        obst_list_low = numpy.full((self.n_observations,self.n_stacked_frames),0)
+        to_goal_list_low = numpy.full((self.n_observations,self.n_stacked_frames),0)
         
-        high = numpy.stack((v_list_high, w_list_high, cost_list_high), axis=2)
-        low = numpy.stack((v_list_low, w_list_low, cost_list_low), axis=2)
+        high = numpy.stack((v_list_high, w_list_high, obst_list_high, to_goal_list_high), axis=2)
+        low = numpy.stack((v_list_low, w_list_low, obst_list_low, to_goal_list_low), axis=2)
 
         self.observation_space = spaces.Box(low, high)
         
@@ -533,7 +537,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         # print("The stacked obs list part {}".format(self.obs_list_stacked[:5,:]))
 
 
-        self.v_matrix, self.w_matrix, self.cost_matrix = DWA(cnfg, self.obs_list_stacked, self.n_stacked_frames)
+        self.v_matrix, self.w_matrix, self.cost_matrix, self.obst_cost_matrix, self.to_goal_cost_matrix = DWA(cnfg, self.obs_list_stacked, self.n_stacked_frames)
 
         # print("The w_matrix after {}".format(self.w_matrix[:5,:]))
         # print("The w_matrix {}".format(self.w_matrix[:,self.n_stacked_frames - 1]))
@@ -543,7 +547,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         	self.viz_obs()
        
 
-        self.stacked_obs = numpy.stack((self.v_matrix, self.w_matrix, self.cost_matrix), axis=2)
+        self.stacked_obs = numpy.stack((self.v_matrix, self.w_matrix, self.obst_cost_matrix, self.to_goal_cost_matrix), axis=2)
          
 
         self.current_distance2goal = self._get_distance2goal()
