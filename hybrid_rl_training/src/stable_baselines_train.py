@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 import sys
-sys.path.remove('/opt/ros/melodic/lib/python2.7/dist-packages')
+sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import gym
 from stable_baselines.common.policies import FeedForwardPolicy, register_policy
 from stable_baselines.common.vec_env import SubprocVecEnv
 from stable_baselines import PPO2
-sys.path.append('/opt/ros/melodic/lib/python2.7/dist-packages')
+sys.path.append('/opt/ros/kinetic/lib/python2.7/dist-packages')
 from openai_ros.task_envs.turtlebot2.turtlebot2_maze import TurtleBot2MazeEnv
 import rospy
 import os

@@ -80,11 +80,13 @@ def calc_final_input(x, u, dw, config, ob, num_stacked_frames):
 
             
             final_cost = to_goal_cost + speed_cost + ob_cost
+            to_goal_array = np.array([to_goal_cost])
+            to_goal_array = np.repeat([to_goal_array],num_stacked_frames, axis = 1)
             v_list.append(v)
             w_list.append(w)
             cost_matrix = np.append(cost_matrix,final_cost, axis = 0)
             obst_cost_matrix = np.append(obst_cost_matrix, ob_cost, axis = 0)
-            to_goal_cost_matrix = np.append(to_goal_cost_matrix, to_goal_cost, axis = 0)    
+            to_goal_cost_matrix = np.append(to_goal_cost_matrix, to_goal_array, axis = 0)    
 
     cost_list, v_list, w_list, cost_matrix, obst_cost_matrix, to_goal_cost_matrix = zip(*sorted(zip(cost_matrix[:,num_stacked_frames - 1], v_list, w_list, cost_matrix, obst_cost_matrix, to_goal_cost_matrix))) # Change 5 with a parameter
 
@@ -208,10 +210,10 @@ def DWA(config, obstacles, num_stacked_frames):
     u = np.array([0.0, 0.0])
 
     start_time = time.time()
-    v_matrix, w_matrix, cost_matrix_normalized = dwa_control(x, u, config, obstacles, num_stacked_frames)
+    v_matrix, w_matrix, cost_matrix_normalized, obst_cost_matrix_normalized, to_goal_cost_matrix_normalized = dwa_control(x, u, config, obstacles, num_stacked_frames)
     
     
-    return v_matrix, w_matrix, cost_matrix_normalized
+    return v_matrix, w_matrix, cost_matrix_normalized, obst_cost_matrix_normalized, to_goal_cost_matrix_normalized
        
 
 
