@@ -149,7 +149,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.cumulated_steps = 0.0
 
         self.laser_filtered_pub = rospy.Publisher('/turtlebot'+str(robot_number)+'/laser/scan_filtered', LaserScan, queue_size=1)
-        self.visualize_obs = False
+        self.visualize_obs = True
 
         rospy.Subscriber("/gazebo/model_states", ModelStates, self.callback_modelstates)
 
@@ -161,6 +161,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                os.mkdir("v")
                os.mkdir("w")
                os.mkdir("cost")
+               os.mkdir("obst")
+               os.mkdir("toGoal")
                os.chdir("../")
                os.chdir("src")
            else:
@@ -399,6 +401,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         max_v_num = numpy.max(self.v_matrix)
         max_w_num = numpy.max(self.w_matrix)
         max_cost_num = numpy.max(self.cost_matrix)
+        max_obst_cost = numpy.max(self.obst_cost_matrix)
+        max_toGoal_cost = numpy.max(self.to_goal_cost_matrix)
 
         v_normalized = (self.v_matrix / max_v_num) * 255
         v_normalized = v_normalized.astype(numpy.uint8)
@@ -406,10 +410,18 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         w_normalized = w_normalized.astype(numpy.uint8)
         cost_normalized = (self.cost_matrix / max_cost_num) * 255
         cost_normalized = cost_normalized.astype(numpy.uint8)
+
+        obst_normalized = (self.obst_cost_matrix / max_obst_cost) * 255
+        obst_normalized = obst_normalized.astype(numpy.uint8)
+
+        toGoal_normalized = (self.to_goal_cost_matrix / max_toGoal_cost) * 255
+        toGoal_normalized = toGoal_normalized.astype(numpy.uint8)
         
         cv2.imwrite("../observation_visualization/v/v_matrix_"+str(self.episode_num)+"_"+str(self.counter)+".jpg", v_normalized)
         cv2.imwrite("../observation_visualization/w/w_matrix_"+str(self.episode_num)+"_"+str(self.counter)+".jpg", w_normalized)
         cv2.imwrite("../observation_visualization/cost/cost_matrix_"+str(self.episode_num)+"_"+str(self.counter)+".jpg", cost_normalized)
+        cv2.imwrite("../observation_visualization/obst/obst_matrix_"+str(self.episode_num)+"_"+str(self.counter)+".jpg", obst_normalized)
+        cv2.imwrite("../observation_visualization/toGoal/toGoal_matrix_"+str(self.episode_num)+"_"+str(self.counter)+".jpg", toGoal_normalized)
         self.counter = self.counter + 1
 
     def _init_env_variables(self):
@@ -543,7 +555,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         # print("The w_matrix {}".format(self.w_matrix[:,self.n_stacked_frames - 1]))
         # print("The cost_matrix {}".format(self.cost_matrix[:,self.n_stacked_frames - 1]))
 
-        if (self.visualize_obs == True):
+        if (self.visualize_obs == True) and (self.robot_number == 0):
         	self.viz_obs()
        
 
