@@ -270,6 +270,38 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 self.initial_pose["w_rot_init"] = 0.001
                 self.pedestrians_info["4_robot_3D1P"][3] = [[0, "Straight"]]
 
+        elif (self.world_file_name == "4_robot_0P"):
+
+            if (self.robot_number == 0):
+                self.initial_pose["x_init"] = -2.5
+                self.initial_pose["y_init"] = -6.0
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0.707
+                self.initial_pose["w_rot_init"] = 0.707
+            elif (self.robot_number == 1):
+                self.initial_pose["x_init"] = 1.0
+                self.initial_pose["y_init"] = -2.5
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 1
+                self.initial_pose["w_rot_init"] = 0
+            elif(self.robot_number == 2):
+                self.initial_pose["x_init"] = -6
+                self.initial_pose["y_init"] = -2.5
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0
+                self.initial_pose["w_rot_init"] = 1
+            elif(self.robot_number == 3):
+                self.initial_pose["x_init"] = -2.5
+                self.initial_pose["y_init"] = 1.0
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = -0.7068
+                self.initial_pose["w_rot_init"] = 0.7073
+
+
         return self.initial_pose
 
 
@@ -389,6 +421,26 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 elif(self.robot_number == 3):
                    self.goal_pose["x"] = -24.39
                    self.goal_pose["y"] = 1.021
+
+            elif(self.world_file_name == "4_robot_0P"):
+                if (self.robot_number == 0):
+                   self.goal_pose["x"] = -2.5
+                   self.goal_pose["y"] = 1
+                
+
+                elif (self.robot_number == 1):
+                   self.goal_pose["x"] = -6
+                   self.goal_pose["y"] = -2.5
+                
+
+                elif(self.robot_number == 2):
+                   self.goal_pose["x"] = 1
+                   self.goal_pose["y"] = -2.5
+                
+
+                elif(self.robot_number == 3):
+                   self.goal_pose["x"] = -2.5
+                   self.goal_pose["y"] = -6.0
 
 
     def _get_distance2goal(self):
@@ -591,7 +643,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
 
 
         reward += 200*(self.previous_distance2goal - self.current_distance2goal)
-        reward += self.temporal_rewards()
+        if self.world_file_name != "4_robot_0P":
+            reward += self.temporal_rewards()
         # print("temporal reward value:::",self.temporal_rewards())
 
         self.previous_distance2goal = self.current_distance2goal
