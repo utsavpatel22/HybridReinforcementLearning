@@ -149,7 +149,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.cumulated_steps = 0.0
 
         self.laser_filtered_pub = rospy.Publisher('/turtlebot'+str(robot_number)+'/laser/scan_filtered', LaserScan, queue_size=1)
-        self.visualize_obs = True
+        self.visualize_obs = False
 
         rospy.Subscriber("/gazebo/model_states", ModelStates, self.callback_modelstates)
 
