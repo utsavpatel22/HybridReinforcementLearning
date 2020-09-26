@@ -301,6 +301,111 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 self.initial_pose["z_rot_init"] = -0.7068
                 self.initial_pose["w_rot_init"] = 0.7073
 
+        elif (self.world_file_name == "6_robot_0P"):
+
+            if (self.robot_number == 0):
+                self.initial_pose["x_init"] = -2.5
+                self.initial_pose["y_init"] = -6.0
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0.707
+                self.initial_pose["w_rot_init"] = 0.707
+            elif (self.robot_number == 1):
+                self.initial_pose["x_init"] = 1.0
+                self.initial_pose["y_init"] = -2.5
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 1
+                self.initial_pose["w_rot_init"] = 0
+            elif(self.robot_number == 2):
+                self.initial_pose["x_init"] = -6
+                self.initial_pose["y_init"] = -2.5
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0
+                self.initial_pose["w_rot_init"] = 1
+            elif(self.robot_number == 3):
+                self.initial_pose["x_init"] = -2.5
+                self.initial_pose["y_init"] = 1.0
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = -0.7068
+                self.initial_pose["w_rot_init"] = 0.7073
+            elif(self.robot_number == 4):
+                self.initial_pose["x_init"] = -6.0
+                self.initial_pose["y_init"] = -6.0
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0
+                self.initial_pose["w_rot_init"] = 1
+            elif(self.robot_number == 5):
+                self.initial_pose["x_init"] = -6.0
+                self.initial_pose["y_init"] = 1.0
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0
+                self.initial_pose["w_rot_init"] = 1
+
+        elif (self.world_file_name == "8_robot_0P"):
+
+            if (self.robot_number == 0):
+                self.initial_pose["x_init"] = -2.5
+                self.initial_pose["y_init"] = -6.0
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0.707
+                self.initial_pose["w_rot_init"] = 0.707
+            elif (self.robot_number == 1):
+                self.initial_pose["x_init"] = 1.0
+                self.initial_pose["y_init"] = -2.5
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 1
+                self.initial_pose["w_rot_init"] = 0
+            elif(self.robot_number == 2):
+                self.initial_pose["x_init"] = -6
+                self.initial_pose["y_init"] = -2.5
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0
+                self.initial_pose["w_rot_init"] = 1
+            elif(self.robot_number == 3):
+                self.initial_pose["x_init"] = -2.5
+                self.initial_pose["y_init"] = 1.0
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = -0.7068
+                self.initial_pose["w_rot_init"] = 0.7073
+            elif(self.robot_number == 4):
+                self.initial_pose["x_init"] = -6.0
+                self.initial_pose["y_init"] = -6.0
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0
+                self.initial_pose["w_rot_init"] = 1
+            elif(self.robot_number == 5):
+                self.initial_pose["x_init"] = -6.0
+                self.initial_pose["y_init"] = 1.0
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0
+                self.initial_pose["w_rot_init"] = 1
+            elif(self.robot_number == 6):
+                self.initial_pose["x_init"] = 1.0
+                self.initial_pose["y_init"] = 1.0
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0.707
+                self.initial_pose["w_rot_init"] = 0.707
+            elif(self.robot_number == 7):
+                self.initial_pose["x_init"] = 1.0
+                self.initial_pose["y_init"] = -6.0
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0.707
+                self.initial_pose["w_rot_init"] = 0.707
+
+
 
         return self.initial_pose
 
@@ -441,6 +546,70 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 elif(self.robot_number == 3):
                    self.goal_pose["x"] = -2.5
                    self.goal_pose["y"] = -6.0
+
+            elif(self.world_file_name == "6_robot_0P"):
+                if (self.robot_number == 0):
+                   self.goal_pose["x"] = -3.5
+                   self.goal_pose["y"] = 0
+                
+
+                elif (self.robot_number == 1):
+                   self.goal_pose["x"] = -5
+                   self.goal_pose["y"] = -3.5
+                
+
+                elif(self.robot_number == 2):
+                   self.goal_pose["x"] = 0
+                   self.goal_pose["y"] = -1.5
+                
+
+                elif(self.robot_number == 3):
+                   self.goal_pose["x"] = -1.5
+                   self.goal_pose["y"] = -5.0
+
+                elif(self.robot_number == 4):
+                   self.goal_pose["x"] = 1.0
+                   self.goal_pose["y"] = 1.0
+
+                elif(self.robot_number == 5):
+                   self.goal_pose["x"] = 1.0
+                   self.goal_pose["y"] = -6.0
+
+            elif(self.world_file_name == "8_robot_0P"):
+                if (self.robot_number == 0):
+                   self.goal_pose["x"] = -3.5
+                   self.goal_pose["y"] = 0
+                
+
+                elif (self.robot_number == 1):
+                   self.goal_pose["x"] = -5
+                   self.goal_pose["y"] = -3.5
+                
+
+                elif(self.robot_number == 2):
+                   self.goal_pose["x"] = 0
+                   self.goal_pose["y"] = -1.5
+                
+
+                elif(self.robot_number == 3):
+                   self.goal_pose["x"] = -1.5
+                   self.goal_pose["y"] = -5.0
+
+                elif(self.robot_number == 4):
+                   self.goal_pose["x"] = 0.0
+                   self.goal_pose["y"] = 0.0
+
+                elif(self.robot_number == 5):
+                   self.goal_pose["x"] = 0.0
+                   self.goal_pose["y"] = -5.0
+
+                elif(self.robot_number == 6):
+                   self.goal_pose["x"] = -5.0
+                   self.goal_pose["y"] = -5.0
+
+                elif(self.robot_number == 7):
+                   self.goal_pose["x"] = -5.0
+                   self.goal_pose["y"] = 0.0
 
 
     def _get_distance2goal(self):
@@ -643,7 +812,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
 
 
         reward += 200*(self.previous_distance2goal - self.current_distance2goal)
-        if self.world_file_name != "4_robot_0P":
+        if self.world_file_name != "4_robot_0P" and self.world_file_name != "6_robot_0P" and self.world_file_name != "8_robot_0P":
             reward += self.temporal_rewards()
         # print("temporal reward value:::",self.temporal_rewards())
 
