@@ -84,6 +84,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
 
         self.pedestrians_info = {}
         self.pedestrians_info["4_robot_3D1P"] = {}
+        self.pedestrians_info["zigzag_3ped"] = {}
 
         self.pedestrian_pose = {}
         # self.robot_pose = {}
@@ -433,13 +434,16 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         return False
 
     def temporal_rewards(self):
+        
         reward = 0
         self.proximal_penalty = -8
-        self.heading_penalty = -25
+        self.heading_penalty = -15 #-25
+        self.pref_reward = 30
         reward1 = 0
+        reward2 = 0
         H_threshold = .5
         R_min = 0.6
-        R_max = 1.5
+        R_max = 3 #1.5
         for robot_id in self.pedestrians_info[self.world_file_name]:
             for i in self.pedestrians_info[self.world_file_name][robot_id]:
                 # i[0] -> pedestrian id
@@ -454,6 +458,12 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 if (R_min < R < R_max) and sideV and sideH:
                     reward1 = (1/R) * self.proximal_penalty + V * self.heading_penalty
                     reward += reward1
+
+                if (R_min < R < R_max) and not sideV and sideH:
+                    reward2 = abs(V) * self.pref_reward
+                    reward += reward2
+                
+
                 if robot_id == 0 and reward1 != 0:
                     print(" pedestrian: ", ped_id)
                     print("Robot number {}".format(robot_id))
@@ -461,6 +471,13 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                     print("Side V ", sideV)
                     print("Side H ", sideH)
                     print("reward: ", reward1)
+                if robot_id == 0 and reward2 != 0:
+                    print(" pedestrian: ", ped_id)
+                    print("Robot number {}".format(robot_id))
+                    print("Ped direction ", i[1])
+                    print("Side V ", sideV)
+                    print("Side H ", sideH)
+                    print("positive:", reward2)
         return reward
 
     def callback_modelstates(self, msg):
@@ -469,15 +486,20 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
             if (msg.name[i][0:5] == "actor"):
                 actor_id = int(msg.name[i][5])
 
-                x = msg.pose[i].position.x
-                y = msg.pose[i].position.y
-                z = msg.pose[i].position.z
-                # w = msg.pose[i].orientation.w
-                # print("actor pose",x,y,z)
-                # q = Quaternion(odom_data_init.pose.pose.orientation.w, odom_data_init.pose.pose.orientation.x,
-                #                odom_data_init.pose.pose.orientation.y, odom_data_init.pose.pose.orientation.z)
-                # e = q.to_euler(degrees=False)
-                self.pedestrian_pose[actor_id] = [x,y]
+                posx = msg.pose[i].position.x
+                posy = msg.pose[i].position.y
+                posz = msg.pose[i].position.z
+
+                x = msg.pose[i].orientation.x
+                y = msg.pose[i].orientation.y
+                z = msg.pose[i].orientation.z
+                w = msg.pose[i].orientation.w
+ 
+                q = Quaternion(w,x,y,z)
+                e = q.to_euler(degrees=True)
+                
+                self.pedestrian_pose[actor_id] = [posx,posy, e[2]]
+
 
     def _get_goal_location(self):
             """ Gets the goal location for each robot
@@ -769,7 +791,6 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         # print("The stacked obs list {}".format(self.obs_list_stacked))
         # print("The stacked obs list part {}".format(self.obs_list_stacked[:5,:]))
 
-
         self.v_matrix, self.w_matrix, self.cost_matrix, self.obst_cost_matrix, self.to_goal_cost_matrix = DWA(cnfg, self.obs_list_stacked, self.n_stacked_frames)
 
         # print("The w_matrix after {}".format(self.w_matrix[:5,:]))
@@ -778,6 +799,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
 
         if (self.visualize_obs == True) and (self.robot_number == 0):
         	self.viz_obs()
+
+        # self.stacked_obs = numpy.stack((self.v_matrix, self.w_matrix, self.cost_matrix), axis=2)
        
 
         self.stacked_obs = numpy.stack((self.v_matrix, self.w_matrix, self.obst_cost_matrix, self.to_goal_cost_matrix), axis=2)
@@ -812,7 +835,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
 
 
         reward += 200*(self.previous_distance2goal - self.current_distance2goal)
-        if self.world_file_name != "4_robot_0P" and self.world_file_name != "6_robot_0P" and self.world_file_name != "8_robot_0P":
+        if self.world_file_name != "4_robot_0P" and self.world_file_name != "6_robot_0P" and self.world_file_name != "8_robot_0P" and self.world_file_name != "zigzag_3ped":
             reward += self.temporal_rewards()
         # print("temporal reward value:::",self.temporal_rewards())
 
@@ -836,7 +859,6 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         rospy.logdebug("Cumulated_steps=" + str(self.cumulated_steps))
         
         return reward
-
 
     # Internal TaskEnv Methods
     
