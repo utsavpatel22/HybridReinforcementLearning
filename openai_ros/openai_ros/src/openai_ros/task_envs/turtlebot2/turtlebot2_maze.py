@@ -842,7 +842,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
 
 
         reward += 200*(self.previous_distance2goal - self.current_distance2goal)
-        if self.world_file_name != "4_robot_0P" and self.world_file_name != "6_robot_0P" and self.world_file_name != "8_robot_0P" and self.world_file_name != "zigzag_3ped":
+        if self.world_file_name == "4_robot_3D1P":
             reward += self.temporal_rewards()
         # print("temporal reward value:::",self.temporal_rewards())
 
