@@ -149,6 +149,13 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
 
         self.cumulated_steps = 0.0
 
+        # Collision danger reward ---- checks the lidar scan and penalizes accordingly
+        self.select_collision_danger_cost = False
+        self.collision_danger_cost = 0
+        self.prox_penalty1 = -1 
+        self.prox_penalty2 = -2
+        self.closeness_threshold = 1.0
+
         self.laser_filtered_pub = rospy.Publisher('/turtlebot'+str(robot_number)+'/laser/scan_filtered', LaserScan, queue_size=1)
         self.visualize_obs = False
 
@@ -851,6 +858,9 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         elif self._episode_done and self._reached_goal:
             reward += self.goal_reaching_points
 
+        # Danger of collision cost
+        if self.select_collision_danger_cost:
+            reward += self.collision_danger_cost
 
         rospy.logdebug("reward=" + str(reward))
         self.cumulated_reward += reward
@@ -879,7 +889,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         
         rospy.logdebug("data=" + str(data))
         rospy.logwarn("mod=" + str(mod))
-        
+        self.collision_danger_cost = 0
+
         for i, item in enumerate(data.ranges):
             if (i%mod==0):
                 if item == float ('Inf') or numpy.isinf(item):
@@ -891,9 +902,14 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 else:
                     #discretized_ranges.append(int(item))
                     discretized_ranges.append(round(item,self.dec_obs))
-                    
+                    if item > self.closeness_threshold:
+                        self.collision_danger_cost += self.prox_penalty1 / round(item,self.dec_obs)
+                    else:
+                        self.collision_danger_cost += self.prox_penalty2 / round(item,self.dec_obs)
+
                 if (self.min_range > item > 0):
                     rospy.logerr("done Validation >>> item=" + str(item)+"< "+str(self.min_range))
+
                     if not self._episode_done:
                         self.episode_collisions += 1
                     self._episode_done = True
