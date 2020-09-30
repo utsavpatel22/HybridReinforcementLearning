@@ -115,30 +115,30 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         rospy.logdebug("new_ranges, jumping laser readings===>"+str(self.new_ranges))
         
         
-        # high = numpy.full((self.n_observations), self.max_cost)
-        # low = numpy.full((self.n_observations), self.min_cost)
+        high = numpy.full((self.n_observations), self.max_cost)
+        low = numpy.full((self.n_observations), self.min_cost)
         
-        # # We only use two integers
-        # self.observation_space = spaces.Box(low, high)
+        # We only use two integers
+        self.observation_space = spaces.Box(low, high)
 
-        # v_list_high = numpy.full((self.n_observations,self.n_stacked_frames),self.max_linear_speed)
-        # w_list_high = numpy.full((self.n_observations,self.n_stacked_frames),self.max_angular_speed)
-        # cost_list_high = numpy.full((self.n_observations,self.n_stacked_frames),1)
-        # obst_list_high = numpy.full((self.n_observations,self.n_stacked_frames),1)
-        # to_goal_list_high = numpy.full((self.n_observations,self.n_stacked_frames),1)
+        v_list_high = numpy.full((self.n_observations,self.n_stacked_frames),self.max_linear_speed)
+        w_list_high = numpy.full((self.n_observations,self.n_stacked_frames),self.max_angular_speed)
+        cost_list_high = numpy.full((self.n_observations,self.n_stacked_frames),1)
+        obst_list_high = numpy.full((self.n_observations,self.n_stacked_frames),1)
+        to_goal_list_high = numpy.full((self.n_observations,self.n_stacked_frames),1)
 
-        # v_list_low = numpy.full((self.n_observations,self.n_stacked_frames),self.min_linear_speed)
-        # w_list_low = numpy.full((self.n_observations,self.n_stacked_frames),self.min_angular_speed)
-        # cost_list_low = numpy.full((self.n_observations,self.n_stacked_frames),0)
-        # obst_list_low = numpy.full((self.n_observations,self.n_stacked_frames),0)
-        # to_goal_list_low = numpy.full((self.n_observations,self.n_stacked_frames),0)
+        v_list_low = numpy.full((self.n_observations,self.n_stacked_frames),self.min_linear_speed)
+        w_list_low = numpy.full((self.n_observations,self.n_stacked_frames),self.min_angular_speed)
+        cost_list_low = numpy.full((self.n_observations,self.n_stacked_frames),0)
+        obst_list_low = numpy.full((self.n_observations,self.n_stacked_frames),0)
+        to_goal_list_low = numpy.full((self.n_observations,self.n_stacked_frames),0)
         
-        # high = numpy.stack((v_list_high, w_list_high, obst_list_high, to_goal_list_high), axis=2)
-        # low = numpy.stack((v_list_low, w_list_low, obst_list_low, to_goal_list_low), axis=2)
+        high = numpy.stack((v_list_high, w_list_high, obst_list_high, to_goal_list_high), axis=2)
+        low = numpy.stack((v_list_low, w_list_low, obst_list_low, to_goal_list_low), axis=2)
 
         #MLP obs space
-        high = numpy.full((2*self.n_observations*self.n_stacked_frames, 1), 1)
-        low = numpy.full((2*self.n_observations*self.n_stacked_frames, 1), 0)
+        # high = numpy.full((2*self.n_observations*self.n_stacked_frames, 1), 1)
+        # low = numpy.full((2*self.n_observations*self.n_stacked_frames, 1), 0)
 
         self.observation_space = spaces.Box(low, high)
         
@@ -814,12 +814,12 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         # self.stacked_obs = numpy.stack((self.v_matrix, self.w_matrix, self.cost_matrix), axis=2)
        
 
-        # self.stacked_obs = numpy.stack((self.v_matrix, self.w_matrix, self.obst_cost_matrix, self.to_goal_cost_matrix), axis=2)
-        self.obst_cost_matrix = self.obst_cost_matrix.flatten('F')
-        self.to_goal_cost_matrix = self.to_goal_cost_matrix.flatten('F')
+        self.stacked_obs = numpy.stack((self.v_matrix, self.w_matrix, self.obst_cost_matrix, self.to_goal_cost_matrix), axis=2)
+        # self.obst_cost_matrix = self.obst_cost_matrix.flatten('F')
+        # self.to_goal_cost_matrix = self.to_goal_cost_matrix.flatten('F')
 
-        self.stacked_obs = numpy.concatenate((self.obst_cost_matrix, self.to_goal_cost_matrix), axis=0)
-        self.stacked_obs = numpy.expand_dims(self.stacked_obs, axis=1)
+        # self.stacked_obs = numpy.concatenate((self.obst_cost_matrix, self.to_goal_cost_matrix), axis=0)
+        # self.stacked_obs = numpy.expand_dims(self.stacked_obs, axis=1)
          
 
         self.current_distance2goal = self._get_distance2goal()
