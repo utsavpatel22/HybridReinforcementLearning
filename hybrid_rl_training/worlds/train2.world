@@ -152,7 +152,7 @@
           </waypoint>
           <waypoint>
             <time>10.47</time>
-            <pose>3.5 0 0 0 -0 -0.5</pose>
+            <pose>6.5 -1 0 0 -0 -0.5</pose>
           </waypoint>
 
         </trajectory>
@@ -228,7 +228,7 @@
             <pose>2 15.5 0 0 -0 4.71</pose>
           </waypoint>
           <waypoint>
-            <time>15</time>
+            <time>10</time>
             <pose>2 7.5 0 0 -0 4.71</pose>
           </waypoint>
 
