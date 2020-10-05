@@ -36,6 +36,8 @@ if __name__ == '__main__':
 
     counter = 0
     collisions = 0
+    start_time = rospy.get_time()
+    episode_time_list = []
     while(counter < max_test_episodes):
         obs = env.reset()
         # Evaluate the agent
@@ -48,7 +50,12 @@ if __name__ == '__main__':
             if (done):
                 print("Done")
                 counter += 1
+                total_time_episode = rospy.get_time() - start_time
+                print("The total time is {}".format(total_time_episode))
+                episode_time_list.append(total_time_episode)
+                start_time = rospy.get_time()
                 break
 
     print("Total number of collisions {}".format(collisions))
+    print(episode_time_list)
         
