@@ -302,7 +302,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 self.initial_pose["z_rot_init"] = 0
                 self.initial_pose["w_rot_init"] = 1
                 self.pedestrians_info["train2"][1] = [[3, "Right"],[2, "Left"], [6, "Right"]]
-                print("robot 1, ",self.pedestrians_info["4_robot_3D1P"][1])
+                # print("robot 1, ",self.pedestrians_info["4_robot_3D1P"][1])
             elif(self.robot_number == 2):
                 self.initial_pose["x_init"] = -10.085
                 self.initial_pose["y_init"] = 12.15

@@ -3,7 +3,7 @@
   <arg name="headless" default="false" />
   <arg name="gui" default="true"/>
   <arg name="verbose" default="true"/>
-  <arg name="world_file"  default="$(find hybrid_rl_training)/worlds/4_robot_3D1P.world"/>
+  <arg name="world_file"  default="$(find hybrid_rl_training)/worlds/train2.world"/>
   <include file="$(find gazebo_ros)/launch/empty_world.launch">
     <arg name="debug" value="0" />
     <arg name="gui" value="$(arg gui)" />
