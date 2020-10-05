@@ -13,6 +13,7 @@
 import rospy
 import math
 import numpy as np
+from std_msgs.msg import Float32
 from geometry_msgs.msg import Twist, PointStamped
 from nav_msgs.msg import Odometry
 from sensor_msgs.msg import LaserScan
@@ -20,6 +21,8 @@ from tf.transformations import euler_from_quaternion
 import time
 from gazebo_msgs.srv import SetModelState, SetModelStateRequest
 import sys
+import csv
+from odom_calculator import odom_calulator
 
 class Config():
     # simulation parameters
@@ -61,15 +64,15 @@ class Config():
             euler_from_quaternion ([rot_q.x,rot_q.y,rot_q.z,rot_q.w])
         self.th = theta
 
+time_list = []
+
 
 class Obstacles():
     def __init__(self):
         # Set of coordinates of obstacles in view
         self.obst = set()
         self.collision_status = False
-        self.start_time = 0
-        self.time_list = []
-
+        
     # Custom range implementation to loop over LaserScan degrees with
     # a step and include the final degree
     def myRange(self,start,end,step):
@@ -81,6 +84,7 @@ class Obstacles():
 
     def return_time_taken(self):
         return self.time_list
+
 
     # Callback for LaserScan
     def assignObs(self, msg, config):
@@ -101,12 +105,9 @@ class Obstacles():
 
             if (distance < 0.5) and (not self.collision_status):
                 self.collision_status = True
-                print("Collided")
-                time_taken = rospy.get_time() - self.start_time
-                self.time_list.append([time_taken])
+                # print("Collided")
                 reset_robot()
-                self.start_time = rospy.get_time()
-            
+                
             if(angleCount < (deg / (2*scanSkip))):
                 # print("In negative angle zone")
                 angleValueNeg += (anglePerSlot)  
@@ -318,9 +319,24 @@ def atGoal(config, x):
         return True
     return False
 
+td = 0
+def getDistance(msg):
+    global td
+    td = msg.data
+
+
 def reset_robot():
+    global time_list, start_time ,td, start_d
     reset_robot = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
     robot_reset_request = SetModelStateRequest()
+    time_taken = rospy.get_time() - start_time
+    distance_travelled = td - start_d
+
+    if time_taken > 0.1:
+        time_list.append([time_taken, distance_travelled]) #, odom_obj.TotalDistance])     
+    start_time = rospy.get_time()
+    start_d = td
+     
     robot_reset_request.model_state.model_name = 'turtlebot' + str(robot_number)
     robot_reset_request.model_state.pose.position.x = initial_pose["x_init"]
     robot_reset_request.model_state.pose.position.y = initial_pose["y_init"]
@@ -330,20 +346,30 @@ def reset_robot():
     robot_reset_request.model_state.pose.orientation.w = initial_pose["w_rot_init"]
 
     rospy.wait_for_service('/gazebo/set_model_state')
+    
+    
     try:
         reset_robot(robot_reset_request)
+        
     except rospy.ServiceException as e:
         print ("/gazebo/set_model_state service call failed")
+    start_time = rospy.get_time()
 
 
 def main():
     print(__file__ + " start!!")
     # robot specification
+
     config = Config()
     # position of obstacles
+    global start_time, td, start_d
+    
     obs = Obstacles()
     subOdom = rospy.Subscriber("/turtlebot"+str(robot_number)+"/ground_truth/state", Odometry, config.assignOdomCoords)
     subLaser = rospy.Subscriber("/turtlebot"+str(robot_number)+"/scan_filtered", LaserScan, obs.assignObs, config)
+    TotalDistance = rospy.Subscriber("/total_distance",Float32, getDistance)
+    start_d = td
+
     pub = rospy.Publisher("/turtlebot"+str(robot_number)+"/cmd_vel_mux/input/navi", Twist, queue_size=1)
     speed = Twist()
     # initial state [x(m), y(m), theta(rad), v(m/s), omega(rad/s)]
@@ -357,13 +383,16 @@ def main():
     total_collisions = 0
     reached_goal = 0
 
+    start_time = rospy.get_time()
+
     # runs until terminated externally
     while not rospy.is_shutdown() and (count < max_test_episodes):
         if (atGoal(config,x) == False):
-            start_time = time.time()
+            # start_time = time.time()
             if (obs.collision_status):
                 count += 1
                 total_collisions += 1
+
             u = dwa_control(x, u, config, obs.obst)
             # print("Time to calculate a single pass through DWA {}".format(time.time() - start_time))
             x[0] = config.x
@@ -385,22 +414,26 @@ def main():
             print("The count is {}".format(count))
             reset_robot()
             x = np.array([config.x, config.y, config.th, 0.0, 0.0])
-        print(atGoal(config,x))
+        # print(atGoal(config,x))
         pub.publish(speed)
         config.r.sleep()
     print("Total collisions and success {} ---- {}".format(total_collisions, reached_goal))
-    for i in range(len(obs.return_time_taken())):
-        print(obs.return_time_taken()[i])
-    file = open('dwa_time.csv', 'a+', newline ='') 
+    global time_list
+    for i in range(len(time_list)):
+        print(time_list[i])
+    file = open('dwa_time.csv', 'w') 
 
     # writing the data into the file 
     with file:     
       write = csv.writer(file) 
-      write.writerows(obs.return_time_taken()) 
+      write.writerows(time_list) 
 
 
 if __name__ == '__main__':
     rospy.init_node('dwa')
+
+    global start_time
+    start_time = rospy.get_time()
     global robot_number
     robot_number = sys.argv[1]
     global initial_pose

@@ -55,10 +55,8 @@ class odom_calulator():
         self.previous_time = time.time()
         self.rate = rospy.Rate(10)
 
-        self.location = rospy.Subscriber("/turtlebot0/odom", Odometry, self.odometry_callback)
+        self.location = rospy.Subscriber("/turtlebot0/ground_truth/state", Odometry, self.odometry_callback)
         rospy.spin()
-
-
 
     def odometry_callback(self,data):
         # print("-------------Start of Callback----------------")
