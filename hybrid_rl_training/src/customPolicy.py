@@ -68,3 +68,11 @@ class CustomTinyDeepCNNPolicy(common.FeedForwardPolicy):
     
     def __init__(self, *args, **kwargs):
         super(CustomTinyDeepCNNPolicy, self).__init__(*args, **kwargs, cnn_extractor=tiny_filter_deep_nature_cnn, feature_extraction="cnn")
+
+
+class CustomMLPPolicy(common.FeedForwardPolicy):
+    def __init__(self, *args, **kwargs):
+        super(CustomMLPPolicy, self).__init__(*args, **kwargs,
+                                           net_arch=[dict(pi=[2880, 1440, 720, 360],
+                                                          vf=[2880, 1440, 720, 360])],
+                                           feature_extraction="mlp")
