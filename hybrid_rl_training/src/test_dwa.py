@@ -67,6 +67,8 @@ class Obstacles():
         # Set of coordinates of obstacles in view
         self.obst = set()
         self.collision_status = False
+        self.start_time = 0
+        self.time_list = []
 
     # Custom range implementation to loop over LaserScan degrees with
     # a step and include the final degree
@@ -76,6 +78,9 @@ class Obstacles():
             yield i
             i += step
         yield end
+
+    def return_time_taken(self):
+        return self.time_list
 
     # Callback for LaserScan
     def assignObs(self, msg, config):
@@ -97,7 +102,10 @@ class Obstacles():
             if (distance < 0.5) and (not self.collision_status):
                 self.collision_status = True
                 print("Collided")
+                time_taken = rospy.get_time() - self.start_time
+                self.time_list.append([time_taken])
                 reset_robot()
+                self.start_time = rospy.get_time()
             
             if(angleCount < (deg / (2*scanSkip))):
                 # print("In negative angle zone")
@@ -381,6 +389,14 @@ def main():
         pub.publish(speed)
         config.r.sleep()
     print("Total collisions and success {} ---- {}".format(total_collisions, reached_goal))
+    for i in range(len(obs.return_time_taken())):
+        print(obs.return_time_taken()[i])
+    file = open('dwa_time.csv', 'a+', newline ='') 
+
+    # writing the data into the file 
+    with file:     
+      write = csv.writer(file) 
+      write.writerows(obs.return_time_taken()) 
 
 
 if __name__ == '__main__':
