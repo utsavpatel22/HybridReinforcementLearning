@@ -46,12 +46,12 @@ class Config():
         self.robot_radius = 0.15  # [m]
         self.x = 0.0
         self.y = 0.0
-        self.th = 0.0
-        self.goalX = 0.0
-        self.goalY = 0.0
-        self.r = rospy.Rate(20)
-        self.goalX = 12.5
+        self.goalX = 0
         self.goalY = 0
+        self.th = 0.0
+        self.r = rospy.Rate(20)
+        self.goalX = -9.5
+        self.goalY = -1.5
 
 
     # Callback for Odometry
@@ -315,7 +315,7 @@ def dwa_control(x, u, config, ob):
 def atGoal(config, x):
     # check at goal
     if math.sqrt((x[0] - config.goalX)**2 + (x[1] - config.goalY)**2) \
-        <= config.robot_radius:
+        <= config.robot_radius + .2:
         return True
     return False
 
@@ -333,7 +333,7 @@ def reset_robot():
     distance_travelled = td - start_d
 
     if time_taken > 0.1:
-        time_list.append([time_taken, distance_travelled]) #, odom_obj.TotalDistance])     
+        time_list.append([round(time_taken,2), round(distance_travelled,2)]) #, odom_obj.TotalDistance])     
     start_time = rospy.get_time()
     start_d = td
      
@@ -421,7 +421,7 @@ def main():
     global time_list
     for i in range(len(time_list)):
         print(time_list[i])
-    file = open('dwa_time.csv', 'w') 
+    file = open('dwa_'+world_name+'.csv', 'w') 
 
     # writing the data into the file 
     with file:     
@@ -432,20 +432,30 @@ def main():
 if __name__ == '__main__':
     rospy.init_node('dwa')
 
-    global start_time
+    global start_time, world_name
     start_time = rospy.get_time()
+    world_name = sys.argv[1]
     global robot_number
-    robot_number = sys.argv[1]
+    robot_number = sys.argv[2]
     global initial_pose
     initial_pose = {}
 
-    initial_pose["x_init"] = 1
-    initial_pose["y_init"] = 0
-    initial_pose["x_rot_init"] = 0
-    initial_pose["y_rot_init"] = 0
-    initial_pose["z_rot_init"] = 0
-    initial_pose["w_rot_init"] = 1
+    if world_name == "zigzag_3ped" :    
 
-    
+        initial_pose["x_init"] = 1
+        initial_pose["y_init"] = 0
+        initial_pose["x_rot_init"] = 0
+        initial_pose["y_rot_init"] = 0
+        initial_pose["z_rot_init"] = 0
+        initial_pose["w_rot_init"] = 1
+
+    elif world_name == "room":
+        initial_pose["x_init"] = 0
+        initial_pose["y_init"] = 0
+        initial_pose["x_rot_init"] = 0
+        initial_pose["y_rot_init"] = 0
+        initial_pose["z_rot_init"] = 1
+        initial_pose["w_rot_init"] = 0
+   
 
     main()
