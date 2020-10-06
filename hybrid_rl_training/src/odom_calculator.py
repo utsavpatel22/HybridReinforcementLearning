@@ -48,6 +48,10 @@ class odom_calulator():
         self.previous_location.position.x = 0.0
         self.previous_location.position.y = 0.0
         self.previous_location.position.z = 0.0
+        odom_tmp = rospy.wait_for_message("/turtlebot0/ground_truth/state", Odometry, timeout=5.0)
+        self.previous_location.position.x = odom_tmp.pose.pose.position.x
+        self.previous_location.position.y = odom_tmp.pose.pose.position.y
+        self.previous_location.position.z = odom_tmp.pose.pose.position.z
         self.current_location.position.x = 0.0
         self.current_location.position.y = 0.0
         self.current_location.position.z = 0.0
