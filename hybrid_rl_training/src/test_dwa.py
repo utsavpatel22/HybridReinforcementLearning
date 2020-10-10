@@ -50,8 +50,8 @@ class Config():
         self.goalY = 0
         self.th = 0.0
         self.r = rospy.Rate(20)
-        self.goalX = -9.5
-        self.goalY = -1.5
+        self.goalX = -5 # robot_goal["x"]
+        self.goalY = 0  #robot_goal["y"]
 
 
     # Callback for Odometry
@@ -315,7 +315,7 @@ def dwa_control(x, u, config, ob):
 def atGoal(config, x):
     # check at goal
     if math.sqrt((x[0] - config.goalX)**2 + (x[1] - config.goalY)**2) \
-        <= config.robot_radius + .2:
+        <= config.robot_radius + .4:
         return True
     return False
 
@@ -385,6 +385,7 @@ def main():
 
     start_time = rospy.get_time()
 
+
     # runs until terminated externally
     while not rospy.is_shutdown() and (count < max_test_episodes):
         if (atGoal(config,x) == False):
@@ -395,6 +396,7 @@ def main():
 
             u = dwa_control(x, u, config, obs.obst)
             # print("Time to calculate a single pass through DWA {}".format(time.time() - start_time))
+
             x[0] = config.x
             x[1] = config.y
             x[2] = config.th
@@ -437,8 +439,9 @@ if __name__ == '__main__':
     world_name = sys.argv[1]
     global robot_number
     robot_number = sys.argv[2]
-    global initial_pose
+    global initial_pose, robot_goal
     initial_pose = {}
+    robot_goal = {}
 
     if world_name == "zigzag_3ped" :    
 
@@ -448,6 +451,9 @@ if __name__ == '__main__':
         initial_pose["y_rot_init"] = 0
         initial_pose["z_rot_init"] = 0
         initial_pose["w_rot_init"] = 1
+        robot_goal["x"] = 12.5
+        robot_goal["y"] = 0
+    
 
     elif world_name == "room":
         initial_pose["x_init"] = 0
@@ -456,6 +462,19 @@ if __name__ == '__main__':
         initial_pose["y_rot_init"] = 0
         initial_pose["z_rot_init"] = 1
         initial_pose["w_rot_init"] = 0
-   
+        robot_goal["x"] = -9.5
+        robot_goal["y"] = -1.5
+
+    elif world_name == "wallped3_8":
+        initial_pose["x_init"] = 11
+        initial_pose["y_init"] = 0
+        initial_pose["x_rot_init"] = 0
+        initial_pose["y_rot_init"] = 0
+        initial_pose["z_rot_init"] = 1
+        initial_pose["w_rot_init"] = 0
+        robot_goal["x"] = -11
+        robot_goal["y"] = 0
+    
+    
 
     main()
