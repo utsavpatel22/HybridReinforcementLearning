@@ -51,8 +51,8 @@ class Config():
         self.th = 0.0
         self.r = rospy.Rate(20)
 
-        self.goalX = 10
-        self.goalY = 0
+        self.goalX = robot_goal["x"]
+        self.goalY = robot_goal["y"]
 
 
     # Callback for Odometry
