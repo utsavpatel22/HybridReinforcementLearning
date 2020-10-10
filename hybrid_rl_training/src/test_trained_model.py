@@ -13,7 +13,8 @@ import os
 from customPolicy import *
 from sensor_msgs.msg import LaserScan
 import time
-from std_msgs.msg import Float32
+from std_msgs.msg import Float32, Bool
+import csv
 # Custom MLP policy of three layers of size 128 each
 class CustomPolicy(FeedForwardPolicy):
     def __init__(self, *args, **kwargs):
@@ -27,6 +28,11 @@ def getDistance(msg):
     global td
     td = msg.data
 
+gr = False
+def getGoalReachingStatus(msg):
+    global gr
+    gr = msg.data
+
 if __name__ == '__main__':
     world_file = sys.argv[1]
     number_of_robots = sys.argv[2]
@@ -37,6 +43,7 @@ if __name__ == '__main__':
     min_range = 0.5 # Refer Task environment to get the value of min range
     rospy.init_node('stable_training', anonymous=True, log_level=rospy.WARN)
     TotalDistance = rospy.Subscriber("/total_distance",Float32, getDistance)
+    goal_reaching_status = rospy.Subscriber('/turtlebot'+str(robot_number)+'/goal_reaching_status', Bool, getGoalReachingStatus)
     env_temp = TurtleBot2MazeEnv
     env = SubprocVecEnv([lambda k=k:env_temp(world_file, k) for k in range(int(number_of_robots))])
     model = PPO2.load("TrainedModels/ppo2_turtlebot#5")
@@ -44,9 +51,9 @@ if __name__ == '__main__':
     counter = 0
     collisions = 0
     start_time = rospy.get_time()
-    episode_time_list = []
-    episode_dist_list = []
+    episode_time_dist_list = []
     start_td = td
+    goal_reached = False
     while(counter < max_test_episodes):
         obs = env.reset()
         # Evaluate the agent
@@ -56,6 +63,7 @@ if __name__ == '__main__':
             td_before_reset = td
             obs, reward, done, info = env.step(action)
             episode_reward += reward
+            goal_reached = gr
             if (done):
                 print("Done")
                 counter += 1
@@ -71,5 +79,9 @@ if __name__ == '__main__':
                 break
 
     print("Total number of collisions {}".format(collisions))
-    print(episode_time_list)
+    file = open('trained_model_data_'+str(world_file)+'.csv', 'w')
+    with file:     
+      write = csv.writer(file) 
+      write.writerows(episode_time_dist_list)
+
         

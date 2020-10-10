@@ -46,11 +46,12 @@ class Config():
         self.robot_radius = 0.15  # [m]
         self.x = 0.0
         self.y = 0.0
+        self.goalX = 0
+        self.goalY = 0
         self.th = 0.0
-        self.goalX = 0.0
-        self.goalY = 0.0
         self.r = rospy.Rate(20)
-        self.goalX = 12.5
+
+        self.goalX = 10
         self.goalY = 0
 
 
@@ -106,7 +107,8 @@ class Obstacles():
             if (distance < 0.5) and (not self.collision_status):
                 self.collision_status = True
                 # print("Collided")
-                reset_robot()
+                reached = False
+                reset_robot(reached)
                 
             if(angleCount < (deg / (2*scanSkip))):
                 # print("In negative angle zone")
@@ -315,7 +317,7 @@ def dwa_control(x, u, config, ob):
 def atGoal(config, x):
     # check at goal
     if math.sqrt((x[0] - config.goalX)**2 + (x[1] - config.goalY)**2) \
-        <= config.robot_radius:
+        <= config.robot_radius + .4:
         return True
     return False
 
@@ -325,7 +327,7 @@ def getDistance(msg):
     td = msg.data
 
 
-def reset_robot():
+def reset_robot(reached):
     global time_list, start_time ,td, start_d
     reset_robot = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
     robot_reset_request = SetModelStateRequest()
@@ -333,7 +335,7 @@ def reset_robot():
     distance_travelled = td - start_d
 
     if time_taken > 0.1:
-        time_list.append([time_taken, distance_travelled]) #, odom_obj.TotalDistance])     
+        time_list.append([round(time_taken,2), round(distance_travelled,2), reached]) #, odom_obj.TotalDistance])     
     start_time = rospy.get_time()
     start_d = td
      
@@ -377,13 +379,14 @@ def main():
     # initial linear and angular velocities
     u = np.array([0.0, 0.0])
 
-    max_test_episodes = 50
+    max_test_episodes = 2
     reached = False
     count = 0
     total_collisions = 0
     reached_goal = 0
 
     start_time = rospy.get_time()
+
 
     # runs until terminated externally
     while not rospy.is_shutdown() and (count < max_test_episodes):
@@ -395,6 +398,7 @@ def main():
 
             u = dwa_control(x, u, config, obs.obst)
             # print("Time to calculate a single pass through DWA {}".format(time.time() - start_time))
+
             x[0] = config.x
             x[1] = config.y
             x[2] = config.th
@@ -412,7 +416,7 @@ def main():
                 reached_goal += 1
             reached = True
             print("The count is {}".format(count))
-            reset_robot()
+            reset_robot(reached)
             x = np.array([config.x, config.y, config.th, 0.0, 0.0])
         # print(atGoal(config,x))
         pub.publish(speed)
@@ -421,7 +425,7 @@ def main():
     global time_list
     for i in range(len(time_list)):
         print(time_list[i])
-    file = open('dwa_time.csv', 'w') 
+    file = open('dwa_'+world_name+'.csv', 'w') 
 
     # writing the data into the file 
     with file:     
@@ -432,20 +436,47 @@ def main():
 if __name__ == '__main__':
     rospy.init_node('dwa')
 
-    global start_time
+    global start_time, world_name
     start_time = rospy.get_time()
+    world_name = sys.argv[1]
     global robot_number
-    robot_number = sys.argv[1]
-    global initial_pose
+    robot_number = sys.argv[2]
+    global initial_pose, robot_goal
     initial_pose = {}
+    robot_goal = {}
 
-    initial_pose["x_init"] = 1
-    initial_pose["y_init"] = 0
-    initial_pose["x_rot_init"] = 0
-    initial_pose["y_rot_init"] = 0
-    initial_pose["z_rot_init"] = 0
-    initial_pose["w_rot_init"] = 1
+    if world_name == "zigzag_3ped" :    
 
+        initial_pose["x_init"] = 1
+        initial_pose["y_init"] = 0
+        initial_pose["x_rot_init"] = 0
+        initial_pose["y_rot_init"] = 0
+        initial_pose["z_rot_init"] = 0
+        initial_pose["w_rot_init"] = 1
+        robot_goal["x"] = 12.5
+        robot_goal["y"] = 0
+    
+
+    elif world_name == "room":
+        initial_pose["x_init"] = 0
+        initial_pose["y_init"] = 0
+        initial_pose["x_rot_init"] = 0
+        initial_pose["y_rot_init"] = 0
+        initial_pose["z_rot_init"] = 1
+        initial_pose["w_rot_init"] = 0
+        robot_goal["x"] = -9.5
+        robot_goal["y"] = -1.5
+
+    elif world_name == "wallped3_8":
+        initial_pose["x_init"] = 11
+        initial_pose["y_init"] = 0
+        initial_pose["x_rot_init"] = 0
+        initial_pose["y_rot_init"] = 0
+        initial_pose["z_rot_init"] = 1
+        initial_pose["w_rot_init"] = 0
+        robot_goal["x"] = -11
+        robot_goal["y"] = 0
+    
     
 
     main()

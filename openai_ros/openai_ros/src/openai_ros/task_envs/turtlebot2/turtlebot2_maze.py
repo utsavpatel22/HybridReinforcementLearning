@@ -9,7 +9,7 @@ from openai_ros.robot_envs import turtlebot2_env
 from gazebo_msgs.msg import ModelStates
 from gym.envs.registration import register
 from sensor_msgs.msg import LaserScan
-from std_msgs.msg import Header
+from std_msgs.msg import Header, Bool
 from squaternion import Quaternion
 from openai_ros.task_envs.turtlebot2.config import Config
 from openai_ros.task_envs.turtlebot2.obstacles import Obstacles
@@ -162,6 +162,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.closeness_threshold = 2.0
 
         self.laser_filtered_pub = rospy.Publisher('/turtlebot'+str(robot_number)+'/laser/scan_filtered', LaserScan, queue_size=1)
+        self.goal_reaching_status_pub = rospy.Publisher('/turtlebot'+str(robot_number)+'/goal_reaching_status', Bool, queue_size=1)
         self.visualize_obs = False
 
         rospy.Subscriber("/gazebo/model_states", ModelStates, self.callback_modelstates)
@@ -184,6 +185,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.total_collisions = 0
         self.episode_collisions = 0
         self.n_skipped_count = 0
+        self.goal_reaching_status = Bool()
+        self.goal_reaching_status.data = False
 
     def _set_init_pose(self):
         """Sets the Robot in its init pose
@@ -901,9 +904,13 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         
         if self._episode_done and (not self._reached_goal):
             reward += -1*self.end_episode_points
+            self.goal_reaching_status.data = False
+            self.goal_reaching_status_pub.publish(self.goal_reaching_status)
 
         elif self._episode_done and self._reached_goal:
             reward += self.goal_reaching_points
+            self.goal_reaching_status.data = True
+            self.goal_reaching_status_pub.publish(self.goal_reaching_status)
 
         # Danger of collision cost
         if self.select_collision_danger_cost:
