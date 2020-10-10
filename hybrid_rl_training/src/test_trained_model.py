@@ -77,7 +77,7 @@ if __name__ == '__main__':
                 break
 
     print("Total number of collisions {}".format(collisions))
-    file = open('trained_model_data.csv', 'w')
+    file = open('trained_model_data_'+str(world_file)+'.csv', 'w')
     with file:     
       write = csv.writer(file) 
       write.writerows(episode_time_dist_list)
