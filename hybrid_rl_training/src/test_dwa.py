@@ -50,8 +50,8 @@ class Config():
         self.goalY = 0
         self.th = 0.0
         self.r = rospy.Rate(20)
-        self.goalX = -9.5
-        self.goalY = -1.5
+        self.goalX = 10
+        self.goalY = 0
 
 
     # Callback for Odometry
@@ -106,7 +106,8 @@ class Obstacles():
             if (distance < 0.5) and (not self.collision_status):
                 self.collision_status = True
                 # print("Collided")
-                reset_robot()
+                reached = False
+                reset_robot(reached)
                 
             if(angleCount < (deg / (2*scanSkip))):
                 # print("In negative angle zone")
@@ -325,7 +326,7 @@ def getDistance(msg):
     td = msg.data
 
 
-def reset_robot():
+def reset_robot(reached):
     global time_list, start_time ,td, start_d
     reset_robot = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
     robot_reset_request = SetModelStateRequest()
@@ -333,7 +334,7 @@ def reset_robot():
     distance_travelled = td - start_d
 
     if time_taken > 0.1:
-        time_list.append([round(time_taken,2), round(distance_travelled,2)]) #, odom_obj.TotalDistance])     
+        time_list.append([round(time_taken,2), round(distance_travelled,2), reached]) #, odom_obj.TotalDistance])     
     start_time = rospy.get_time()
     start_d = td
      
@@ -377,7 +378,7 @@ def main():
     # initial linear and angular velocities
     u = np.array([0.0, 0.0])
 
-    max_test_episodes = 50
+    max_test_episodes = 2
     reached = False
     count = 0
     total_collisions = 0
@@ -412,7 +413,7 @@ def main():
                 reached_goal += 1
             reached = True
             print("The count is {}".format(count))
-            reset_robot()
+            reset_robot(reached)
             x = np.array([config.x, config.y, config.th, 0.0, 0.0])
         # print(atGoal(config,x))
         pub.publish(speed)
