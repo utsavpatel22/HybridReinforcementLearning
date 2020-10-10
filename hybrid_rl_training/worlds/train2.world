@@ -134,31 +134,6 @@
 
     </actor>
 
-    <actor name='actor5'>
-      <pose frame=''>0 1 0 0 -0 0</pose>
-      <skin>
-        <filename>walk.dae</filename>
-      </skin>
-      <animation name='walking'>
-        <filename>walk.dae</filename>
-        <interpolate_x>1</interpolate_x>
-      </animation>
-      <script>
-        <loop>1</loop>
-        <trajectory id='1' type='walking' tension='0'>
-          <waypoint>
-            <time>0</time>
-            <pose>-1 2 0 0 -0 0</pose>
-          </waypoint>
-          <waypoint>
-            <time>10.47</time>
-            <pose>6.5 -1 0 0 -0 -0.5</pose>
-          </waypoint>
-
-        </trajectory>
-      </script>
-
-    </actor>
 
     <actor name='actor2'>
       <pose frame=''>0 1 0 0 -0 0</pose>
@@ -211,7 +186,7 @@
 
     </actor>
 
-    <actor name='actor6'>
+    <actor name='actor5'>
       <pose frame=''>0 1 0 0 -0 0</pose>
       <skin>
         <filename>walk.dae</filename>
@@ -225,11 +200,11 @@
         <trajectory id='1' type='walking' tension='0'>
           <waypoint>
             <time>0</time>
-            <pose>2 15.5 0 0 -0 4.71</pose>
+            <pose>3 15.5 0 0 -0 4.71</pose>
           </waypoint>
           <waypoint>
             <time>10</time>
-            <pose>2 7.5 0 0 -0 4.71</pose>
+            <pose>3 7.5 0 0 -0 4.71</pose>
           </waypoint>
 
         </trajectory>
@@ -262,7 +237,56 @@
 
     </actor>
 
+    <actor name='actor6'>
+      <pose frame=''>0 1 0 0 -0 0</pose>
+      <skin>
+        <filename>walk.dae</filename>
+      </skin>
+      <animation name='walking'>
+        <filename>walk.dae</filename>
+        <interpolate_x>1</interpolate_x>
+      </animation>
+      <script>
+        <loop>1</loop>
+        <trajectory id='1' type='walking' tension='0'>
+          <waypoint>
+            <time>0</time>
+            <pose>-20 -1.5 0 0 -0 0</pose>
+          </waypoint>
+          <waypoint>
+            <time>14.33</time>
+            <pose>-5.67 -1.5 0 0 -0 0</pose>
+          </waypoint>
+        </trajectory>
+      </script>
 
+    </actor>
+
+
+    <actor name='actor7'>
+      <pose frame=''>0 1 0 0 -0 0</pose>
+      <skin>
+        <filename>walk.dae</filename>
+      </skin>
+      <animation name='walking'>
+        <filename>walk.dae</filename>
+        <interpolate_x>1</interpolate_x>
+      </animation>
+      <script>
+        <loop>1</loop>
+        <trajectory id='1' type='walking' tension='0'>
+          <waypoint>
+            <time>0</time>
+            <pose>-25 1.5 0 0 -0 0</pose>
+          </waypoint>
+          <waypoint>
+            <time>15.33</time>
+            <pose>-15.67 1.5 0 0 -0 0</pose>
+          </waypoint>
+        </trajectory>
+      </script>
+
+    </actor>
 
     <model name='18X6_wall'>
       <pose frame=''>-1.02014 3.87509 0 0 -0 0</pose>
