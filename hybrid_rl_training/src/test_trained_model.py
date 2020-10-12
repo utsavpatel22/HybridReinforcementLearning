@@ -72,8 +72,7 @@ if __name__ == '__main__':
                     total_distance_episode = td_before_reset - start_td
                     print("The total time is {}".format(total_time_episode))
                     print("The distance travelled {}".format(total_distance_episode))
-                    episode_time_list.append(total_time_episode)
-                    episode_dist_list.append(total_distance_episode)
+                    episode_time_dist_list.append([total_time_episode, total_distance_episode, goal_reached])
                     start_time = rospy.get_time()
                     start_td = td
                 break
