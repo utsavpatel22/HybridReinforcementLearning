@@ -104,7 +104,7 @@ class Obstacles():
         for angle in self.myRange(0,deg-1,scanSkip):
             distance = msg.ranges[angle]
 
-            if (distance < 0.5) and (not self.collision_status):
+            if (distance < 0.3) and (not self.collision_status):
                 self.collision_status = True
                 # print("Collided")
                 reached = False
@@ -379,7 +379,7 @@ def main():
     # initial linear and angular velocities
     u = np.array([0.0, 0.0])
 
-    max_test_episodes = 2
+    max_test_episodes = 50
     reached = False
     count = 0
     total_collisions = 0
@@ -474,8 +474,18 @@ if __name__ == '__main__':
         initial_pose["y_rot_init"] = 0
         initial_pose["z_rot_init"] = 1
         initial_pose["w_rot_init"] = 0
-        robot_goal["x"] = -11
+        robot_goal["x"] = -9
         robot_goal["y"] = 0
+
+    elif world_name == "zigzag_static":
+        initial_pose["x_init"] = -11
+        initial_pose["y_init"] = 7.5
+        initial_pose["x_rot_init"] = 0
+        initial_pose["y_rot_init"] = 0
+        initial_pose["z_rot_init"] = 0
+        initial_pose["w_rot_init"] = 1
+        robot_goal["x"] = 4.4
+        robot_goal["y"] = -8.4
     
     
 
