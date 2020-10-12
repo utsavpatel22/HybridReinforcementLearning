@@ -37,6 +37,7 @@ if __name__ == '__main__':
     world_file = sys.argv[1]
     number_of_robots = sys.argv[2]
     robot_number = sys.argv[3] # Provide robot number to subscribe to the correct topic  
+    profiling = True
     max_steps = 900
     max_test_episodes = 50
     min_range = 0.5 # Refer Task environment to get the value of min range
@@ -66,14 +67,15 @@ if __name__ == '__main__':
             if (done):
                 print("Done")
                 counter += 1
-                total_time_episode = rospy.get_time() - start_time
-                total_distance_episode = td_before_reset - start_td
-                print("The total time is {}".format(total_time_episode))
-                print("The distance travelled {}".format(total_distance_episode))
-                episode_time_dist_list.append([total_time_episode, total_distance_episode,goal_reached])
-
-                start_time = rospy.get_time()
-                start_td = td
+                if profiling:
+                    total_time_episode = rospy.get_time() - start_time
+                    total_distance_episode = td_before_reset - start_td
+                    print("The total time is {}".format(total_time_episode))
+                    print("The distance travelled {}".format(total_distance_episode))
+                    episode_time_list.append(total_time_episode)
+                    episode_dist_list.append(total_distance_episode)
+                    start_time = rospy.get_time()
+                    start_td = td
                 break
 
     print("Total number of collisions {}".format(collisions))
