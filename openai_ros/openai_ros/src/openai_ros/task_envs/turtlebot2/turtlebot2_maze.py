@@ -9,7 +9,7 @@ from openai_ros.robot_envs import turtlebot2_env
 from gazebo_msgs.msg import ModelStates
 from gym.envs.registration import register
 from sensor_msgs.msg import LaserScan
-from std_msgs.msg import Header
+from std_msgs.msg import Header, Bool
 from squaternion import Quaternion
 from openai_ros.task_envs.turtlebot2.config import Config
 from openai_ros.task_envs.turtlebot2.obstacles import Obstacles
@@ -136,6 +136,9 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         high = numpy.stack((v_list_high, w_list_high, obst_list_high, to_goal_list_high), axis=2)
         low = numpy.stack((v_list_low, w_list_low, obst_list_low, to_goal_list_low), axis=2)
 
+        high = numpy.stack((v_list_high, w_list_high, cost_list_high), axis=2)
+        low = numpy.stack((v_list_low, w_list_low, cost_list_low), axis=2)
+
         self.observation_space = spaces.Box(low, high)
         
         rospy.logdebug("ACTION SPACES TYPE===>"+str(self.action_space))
@@ -150,14 +153,19 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.cumulated_steps = 0.0
 
         # Collision danger reward ---- checks the lidar scan and penalizes accordingly
-        self.select_collision_danger_cost = False
+        self.select_collision_danger_cost = True
         self.collision_danger_cost = 0
         self.prox_penalty1 = -1 
         self.prox_penalty2 = -2
         self.closeness_threshold = 1.0
 
         self.laser_filtered_pub = rospy.Publisher('/turtlebot'+str(robot_number)+'/laser/scan_filtered', LaserScan, queue_size=1)
+        self.goal_reaching_status_pub = rospy.Publisher('/turtlebot'+str(robot_number)+'/goal_reaching_status', Bool, queue_size=1)
         self.visualize_obs = False
+        self.goal_reaching_status = Bool()
+        self.goal_reaching_status.data = False
+ 
+
 
         rospy.Subscriber("/gazebo/model_states", ModelStates, self.callback_modelstates)
 
@@ -238,8 +246,15 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
             self.initial_pose["y_rot_init"] = 0
             self.initial_pose["z_rot_init"] = 0
             self.initial_pose["w_rot_init"] = 1
-            self.pedestrians_info["zigzag_3ped"][0] = [0,1,2]
 
+
+        elif (self.world_file_name == "zigzag_static"):
+            self.initial_pose["x_init"] = -10
+            self.initial_pose["y_init"] = 8
+            self.initial_pose["x_rot_init"] = 0
+            self.initial_pose["y_rot_init"] = 0
+            self.initial_pose["z_rot_init"] = 0
+            self.initial_pose["w_rot_init"] = 1.5    
 
         elif (self.world_file_name == "4_robot_3D1P"):
 
@@ -444,8 +459,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         
         reward = 0
         self.proximal_penalty = -8
-        self.heading_penalty = -15 #-25
-        self.pref_reward = 30
+        self.heading_penalty = -25 #-25
+        self.pref_reward = 45
         reward1 = 0
         reward2 = 0
         H_threshold = .5
@@ -536,6 +551,10 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                self.goal_pose["x"] = 12.5
                self.goal_pose["y"] = 0
 
+            elif(self.world_file_name == "zigzag_static"):
+               self.goal_pose["x"] = 5
+               self.goal_pose["y"] = -9
+               
             elif(self.world_file_name == "4_robot_3D1P"):
                 if (self.robot_number == 0):
                    self.goal_pose["x"] = 14.81
@@ -807,10 +826,10 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         if (self.visualize_obs == True) and (self.robot_number == 0):
         	self.viz_obs()
 
-        # self.stacked_obs = numpy.stack((self.v_matrix, self.w_matrix, self.cost_matrix), axis=2)
+        self.stacked_obs = numpy.stack((self.v_matrix, self.w_matrix, self.cost_matrix), axis=2)
        
 
-        self.stacked_obs = numpy.stack((self.v_matrix, self.w_matrix, self.obst_cost_matrix, self.to_goal_cost_matrix), axis=2)
+        # self.stacked_obs = numpy.stack((self.v_matrix, self.w_matrix, self.obst_cost_matrix, self.to_goal_cost_matrix), axis=2)
          
 
         self.current_distance2goal = self._get_distance2goal()
@@ -826,11 +845,16 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         
         if self._episode_done and (not self._reached_goal):
             rospy.logdebug("TurtleBot2 is Too Close to wall==>"+str(self._episode_done))
-            
+            self.goal_reaching_status.data = False
+            self.goal_reaching_status_pub.publish(self.goal_reaching_status)
+
+
 
         elif self._episode_done and self._reached_goal:
             rospy.logdebug("Robot {} reached the goal".format(self.robot_number))
-            
+            self.goal_reaching_status.data = True
+            self.goal_reaching_status_pub.publish(self.goal_reaching_status)
+
         else:
             rospy.logdebug("TurtleBot2 is Ok ==>")
 
