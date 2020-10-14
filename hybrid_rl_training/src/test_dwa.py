@@ -476,6 +476,17 @@ if __name__ == '__main__':
         initial_pose["w_rot_init"] = 0
         robot_goal["x"] = -11
         robot_goal["y"] = 0
+
+    elif world_name == "zigzag_static":
+        initial_pose["x_init"] = -9
+        initial_pose["y_init"] = 8
+        initial_pose["x_rot_init"] = 0
+        initial_pose["y_rot_init"] = 0
+        initial_pose["z_rot_init"] = .5
+        initial_pose["w_rot_init"] = 0
+        robot_goal["x"] = 5
+        robot_goal["y"] = -9
+
     
     
 
