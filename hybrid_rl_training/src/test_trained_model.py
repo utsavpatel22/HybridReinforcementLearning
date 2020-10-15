@@ -46,7 +46,8 @@ if __name__ == '__main__':
     goal_reaching_status = rospy.Subscriber('/turtlebot'+str(robot_number)+'/goal_reaching_status', Bool, getGoalReachingStatus)
     env_temp = TurtleBot2MazeEnv
     env = SubprocVecEnv([lambda k=k:env_temp(world_file, k) for k in range(int(number_of_robots))])
-    model = PPO2.load("ppo2_turtlebot#5")
+
+    model = PPO2.load("ppo2_turtlebot_tr#3")
 
     counter = 0
     collisions = 0
