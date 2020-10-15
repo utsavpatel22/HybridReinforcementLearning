@@ -10,7 +10,7 @@ from gazebo_msgs.msg import ModelStates
 # from tf.transformations import euler_from_quaternion, quaternion_from_euler
 from gym.envs.registration import register
 from sensor_msgs.msg import LaserScan
-from std_msgs.msg import Header
+from std_msgs.msg import Header,Bool
 from squaternion import Quaternion
 from openai_ros.task_envs.turtlebot2.config import Config
 from openai_ros.task_envs.turtlebot2.obstacles import Obstacles
@@ -68,7 +68,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
 
         self.n_laser_discretization = rospy.get_param('/turtlebot2/n_laser_discretization',128)
         self.n_observations = rospy.get_param('/turtlebot2/n_observations',144)
-        self.min_range = rospy.get_param('/turtlebot2/min_range',0.8)
+        self.min_range = rospy.get_param('/turtlebot2/min_range',0.5)
         self.max_cost = rospy.get_param('/turtlebot2/max_cost',1)
         self.min_cost = rospy.get_param('/turtlebot2/min_cost',0)
         self.n_stacked_frames = rospy.get_param('/turtlebot2/n_stacked_frames',10)
@@ -147,6 +147,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
 
         self.laser_filtered_pub = rospy.Publisher('/turtlebot'+str(robot_number)+'/laser/scan_filtered', LaserScan, queue_size=1)
         rospy.Subscriber("/gazebo/model_states", ModelStates, self.callback_modelstates)
+        self.goal_reaching_status_pub = rospy.Publisher('/turtlebot'+str(robot_number)+'/goal_reaching_status', Bool, queue_size=1)
+        
         self.visualize_obs = True
         if self.visualize_obs:
            os.chdir("../")
@@ -164,6 +166,9 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.total_collisions = 0
         self.episode_collisions = 0
         self.n_skipped_count = 0
+        self.goal_reaching_status = Bool()
+        self.goal_reaching_status.data = False
+
 
     def _set_init_pose(self):
         """Sets the Robot in its init pose
@@ -223,8 +228,14 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
             self.initial_pose["y_rot_init"] = 0
             self.initial_pose["z_rot_init"] = 0
             self.initial_pose["w_rot_init"] = 1
-            self.pedestrians_info["zigzag_3ped"][0] = [0,1,2]
 
+        elif (self.world_file_name == "zigzag_static"):
+            self.initial_pose["x_init"] = -10
+            self.initial_pose["y_init"] = 8
+            self.initial_pose["x_rot_init"] = 0
+            self.initial_pose["y_rot_init"] = 0
+            self.initial_pose["z_rot_init"] = 0
+            self.initial_pose["w_rot_init"] = 1.5
 
         elif (self.world_file_name == "4_robot_3D1P"):
 
@@ -365,6 +376,10 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
             elif(self.world_file_name == "zigzag_3ped"):
                self.goal_pose["x"] = 12.5
                self.goal_pose["y"] = 0
+
+            elif(self.world_file_name == "zigzag_static"):
+               self.goal_pose["x"] = 5
+               self.goal_pose["y"] = -9
 
             elif(self.world_file_name == "4_robot_3D1P"):
                 if (self.robot_number == 0):
@@ -577,7 +592,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
 
 
         reward += 200*(self.previous_distance2goal - self.current_distance2goal)
-        reward += self.temporal_rewards()
+        
+        # reward += self.temporal_rewards()
         # print("temporal reward value:::",self.temporal_rewards())
 
         self.previous_distance2goal = self.current_distance2goal
@@ -588,10 +604,13 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         
         if self._episode_done and (not self._reached_goal):
             reward += -1*self.end_episode_points
-
+            self.goal_reaching_status.data = False
+            self.goal_reaching_status_pub.publish(self.goal_reaching_status)
+ 
         elif self._episode_done and self._reached_goal:
             reward += self.goal_reaching_points
-
+            self.goal_reaching_status.data = True
+            self.goal_reaching_status_pub.publish(self.goal_reaching_status)
 
         rospy.logdebug("reward=" + str(reward))
         self.cumulated_reward += reward
