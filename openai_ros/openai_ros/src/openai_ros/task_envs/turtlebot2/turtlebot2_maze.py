@@ -246,6 +246,15 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
             self.initial_pose["z_rot_init"] = 1
             self.initial_pose["w_rot_init"] = 0
             
+
+        elif (self.world_file_name == "zigzag_static"):
+                self.initial_pose["x_init"] = -11
+                self.initial_pose["y_init"] = 7.5
+                self.initial_pose["x_rot_init"] = 0
+                self.initial_pose["y_rot_init"] = 0
+                self.initial_pose["z_rot_init"] = 0
+                self.initial_pose["w_rot_init"] = 1
+
         elif(self.world_file_name == "zigzag_3ped"):
 
             self.initial_pose["x_init"] = 1
@@ -612,6 +621,10 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
             elif self.world_file_name == "wallped3_8":
                 self.goal_pose["x"] = -9
                 self.goal_pose["y"] = 0
+
+            elif(self.world_file_name == "zigzag_static"):
+               self.goal_pose["x"] = 5
+               self.goal_pose["y"] = -9
 
             elif(self.world_file_name == "4_robot_3D1P" or self.world_file_name == "train2" ):
                 if (self.robot_number == 0):
