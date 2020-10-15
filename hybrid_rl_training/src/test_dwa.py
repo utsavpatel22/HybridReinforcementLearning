@@ -51,7 +51,7 @@ class Config():
         self.th = 0.0
         self.r = rospy.Rate(20)
 
-        self.goalX = 10
+        self.goalX = -4
         self.goalY = 0
 
 
@@ -104,7 +104,7 @@ class Obstacles():
         for angle in self.myRange(0,deg-1,scanSkip):
             distance = msg.ranges[angle]
 
-            if (distance < 0.5) and (not self.collision_status):
+            if (distance < 0.05) and (not self.collision_status):
                 self.collision_status = True
                 # print("Collided")
                 reached = False
@@ -367,19 +367,19 @@ def main():
     global start_time, td, start_d
     
     obs = Obstacles()
-    subOdom = rospy.Subscriber("/turtlebot"+str(robot_number)+"/ground_truth/state", Odometry, config.assignOdomCoords)
-    subLaser = rospy.Subscriber("/turtlebot"+str(robot_number)+"/scan_filtered", LaserScan, obs.assignObs, config)
+    subOdom = rospy.Subscriber("/odom", Odometry, config.assignOdomCoords)
+    subLaser = rospy.Subscriber("/scan", LaserScan, obs.assignObs, config)
     TotalDistance = rospy.Subscriber("/total_distance",Float32, getDistance)
     start_d = td
 
-    pub = rospy.Publisher("/turtlebot"+str(robot_number)+"/cmd_vel_mux/input/navi", Twist, queue_size=1)
+    pub = rospy.Publisher("/cmd_vel_mux/input/navi", Twist, queue_size=1)
     speed = Twist()
     # initial state [x(m), y(m), theta(rad), v(m/s), omega(rad/s)]
     x = np.array([config.x, config.y, config.th, 0.0, 0.0])
     # initial linear and angular velocities
     u = np.array([0.0, 0.0])
 
-    max_test_episodes = 2
+    max_test_episodes = 1
     reached = False
     count = 0
     total_collisions = 0
@@ -468,6 +468,16 @@ if __name__ == '__main__':
         robot_goal["y"] = -1.5
 
     elif world_name == "wallped3_8":
+        initial_pose["x_init"] = 11
+        initial_pose["y_init"] = 0
+        initial_pose["x_rot_init"] = 0
+        initial_pose["y_rot_init"] = 0
+        initial_pose["z_rot_init"] = 1
+        initial_pose["w_rot_init"] = 0
+        robot_goal["x"] = -11
+        robot_goal["y"] = 0
+
+    elif world_name == "realRobot":
         initial_pose["x_init"] = 11
         initial_pose["y_init"] = 0
         initial_pose["x_rot_init"] = 0

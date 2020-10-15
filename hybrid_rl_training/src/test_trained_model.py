@@ -1,12 +1,12 @@
 #!/usr/bin/env python
 
 import sys
-sys.path.remove('/opt/ros/melodic/lib/python2.7/dist-packages')
+sys.path.remove('/opt/ros/kinetic/lib/python2.7/dist-packages')
 import gym
 from stable_baselines.common.policies import FeedForwardPolicy, register_policy
 from stable_baselines.common.vec_env import SubprocVecEnv
 from stable_baselines import PPO2
-sys.path.append('/opt/ros/melodic/lib/python2.7/dist-packages')
+sys.path.append('/opt/ros/kinetic/lib/python2.7/dist-packages')
 from openai_ros.task_envs.turtlebot2.turtlebot2_maze import TurtleBot2MazeEnv
 import rospy
 import os
@@ -36,17 +36,17 @@ def getGoalReachingStatus(msg):
 if __name__ == '__main__':
     world_file = sys.argv[1]
     number_of_robots = sys.argv[2]
-    robot_number = sys.argv[3] # Provide robot number to subscribe to the correct topic  
+    robot_number =  sys.argv[3]
     profiling = True
     max_steps = 900
-    max_test_episodes = 50
+    max_test_episodes = 1
     min_range = 0.5 # Refer Task environment to get the value of min range
     rospy.init_node('stable_training', anonymous=True, log_level=rospy.WARN)
     TotalDistance = rospy.Subscriber("/total_distance",Float32, getDistance)
     goal_reaching_status = rospy.Subscriber('/turtlebot'+str(robot_number)+'/goal_reaching_status', Bool, getGoalReachingStatus)
     env_temp = TurtleBot2MazeEnv
     env = SubprocVecEnv([lambda k=k:env_temp(world_file, k) for k in range(int(number_of_robots))])
-    model = PPO2.load("TrainedModels/ppo2_turtlebot#5")
+    model = PPO2.load("ppo2_turtlebot#5")
 
     counter = 0
     collisions = 0
