@@ -72,13 +72,13 @@ class TurtleBot2Env(robot_gazebo_env.RobotGazeboEnv):
         self._check_all_sensors_ready()
 
         # We Start all the ROS related Subscribers and publishers
-        rospy.Subscriber("/turtlebot"+str(self.robot_number)+"/ground_truth/state", Odometry, self._odom_callback)
+        rospy.Subscriber("/odom", Odometry, self._odom_callback)
         #rospy.Subscriber("/camera/depth/image_raw", Image, self._camera_depth_image_raw_callback)
         #rospy.Subscriber("/camera/depth/points", PointCloud2, self._camera_depth_points_callback)
         #rospy.Subscriber("/camera/rgb/image_raw", Image, self._camera_rgb_image_raw_callback)
-        rospy.Subscriber("/turtlebot"+str(self.robot_number)+"/scan_filtered", LaserScan, self._laser_scan_callback)
+        rospy.Subscriber("/scan", LaserScan, self._laser_scan_callback)
 
-        self._cmd_vel_pub = rospy.Publisher("/turtlebot"+str(self.robot_number)+"/cmd_vel_mux/input/navi", Twist, queue_size=1)
+        self._cmd_vel_pub = rospy.Publisher("/cmd_vel_mux/input/navi", Twist, queue_size=1)
 
         self._check_publishers_connection()
 
@@ -117,7 +117,7 @@ class TurtleBot2Env(robot_gazebo_env.RobotGazeboEnv):
         rospy.logdebug("Waiting for "+"/turtlebot"+str(self.robot_number)+ "/ground_truth/state to be READY...")
         while self.odom is None and not rospy.is_shutdown():
             try:
-                self.odom = rospy.wait_for_message("/turtlebot"+str(self.robot_number)+"/ground_truth/state", Odometry, timeout=5.0)
+                self.odom = rospy.wait_for_message("/odom", Odometry, timeout=5.0)
                 rospy.logdebug("Current"+"/turtlebot"+ str(self.robot_number)+ "/ground_truth/state READY=>")
 
             except:
@@ -170,7 +170,7 @@ class TurtleBot2Env(robot_gazebo_env.RobotGazeboEnv):
         rospy.logdebug("Waiting for " +"/turtlebot"+str(self.robot_number)+"/scan_filtered to be READY...")
         while self.laser_scan is None and not rospy.is_shutdown():
             try:
-                self.laser_scan = rospy.wait_for_message("/turtlebot"+str(self.robot_number)+"/scan_filtered", LaserScan, timeout=5.0)
+                self.laser_scan = rospy.wait_for_message("/scan", LaserScan, timeout=5.0)
                 rospy.logdebug("Current "+"/turtlebot"+str(self.robot_number)+" /scan_filtered READY=>")
 
             except:

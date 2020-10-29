@@ -67,7 +67,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
 
         self.n_laser_discretization = rospy.get_param('/turtlebot2/n_laser_discretization',128)
         self.n_observations = rospy.get_param('/turtlebot2/n_observations',144)
-        self.min_range = rospy.get_param('/turtlebot2/min_range',0.5)
+        self.min_range = rospy.get_param('/turtlebot2/min_range',0.02)
         self.max_cost = rospy.get_param('/turtlebot2/max_cost',1)
         self.min_cost = rospy.get_param('/turtlebot2/min_cost',0)
         self.n_stacked_frames = rospy.get_param('/turtlebot2/n_stacked_frames',10)
@@ -458,6 +458,16 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 self.initial_pose["z_rot_init"] = 0.707
                 self.initial_pose["w_rot_init"] = 0.707
 
+        elif(self.world_file_name == "realRobot"):
+
+            self.initial_pose["x_init"] = 0
+            self.initial_pose["y_init"] = 0
+            self.initial_pose["x_rot_init"] = 0
+            self.initial_pose["y_rot_init"] = 0
+            self.initial_pose["z_rot_init"] = 0
+            self.initial_pose["w_rot_init"] = 1
+            self.pedestrians_info["zigzag_3ped"][0] = [0,1,2]
+
 
 
         return self.initial_pose
@@ -684,6 +694,10 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                 elif(self.robot_number == 7):
                    self.goal_pose["x"] = -5.0
                    self.goal_pose["y"] = 0.0
+
+            elif(self.world_file_name == "realRobot"):
+               self.goal_pose["x"] = 7
+               self.goal_pose["y"] = 2.5
 
 
     def _get_distance2goal(self):
