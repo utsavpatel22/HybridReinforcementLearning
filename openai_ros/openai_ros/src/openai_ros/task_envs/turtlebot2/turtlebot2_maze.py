@@ -17,6 +17,7 @@ from openai_ros.task_envs.turtlebot2.dwa import DWA
 from openai_ros.gazebo_connection import GazeboConnection
 import cv2
 import os
+import csv
 
 
 # The path is __init__.py of openai_ros, where we import the TurtleBot2MazeEnv directly
@@ -164,6 +165,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.laser_filtered_pub = rospy.Publisher('/turtlebot'+str(robot_number)+'/laser/scan_filtered', LaserScan, queue_size=1)
         self.goal_reaching_status_pub = rospy.Publisher('/turtlebot'+str(robot_number)+'/goal_reaching_status', Bool, queue_size=1)
         self.visualize_obs = False
+        self.list_angular_vel = []
+        self.list_vel = []
 
         rospy.Subscriber("/gazebo/model_states", ModelStates, self.callback_modelstates)
 
@@ -811,6 +814,17 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         print("Total number of collsions ------------ {}".format(self.total_collisions))
         self.episode_collisions = 0
         self.n_skipped_count = 0
+
+        file = open('VelList.csv', 'w')
+        file_ang = open('angularVelList.csv', 'w')
+        with file:
+            write = csv.writer(file)
+            write.writerows(self.list_vel)
+            write_ang = csv.writer(file_ang)
+            write_ang.writerows(self.list_angular_vel)
+
+        self.list_vel.append(["lower_limit", "upper_limit", "current_velocity", "Violation_Status"])
+        self.list_angular_vel.append(["lower_limit", "upper_limit", "current_velocity", "Violation_Status"])
         
 
 
@@ -828,6 +842,26 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         linear_speed = self.v_matrix[:,self.n_stacked_frames - 1][action]
         angular_speed = self.w_matrix[:,self.n_stacked_frames - 1][action]
         self.last_action = linear_speed
+
+        linear_acc_limit = 2.5
+        angular_acc_limit = 3.2
+        del_t = 0.1
+
+        max_reachable_vel_x = (self.odom_dict["u"] + (linear_acc_limit * del_t))
+        min_reachable_vel_x = (self.odom_dict["u"] - (linear_acc_limit * del_t))
+        max_reachable_vel_w =  self.odom_dict["omega"] + (angular_acc_limit * del_t)
+        min_reachable_vel_w =  self.odom_dict["omega"] - (angular_acc_limit * del_t)
+
+        if (linear_speed > max_reachable_vel_x) or (linear_speed < min_reachable_vel_x):
+            self.list_vel.append([min_reachable_vel_x,max_reachable_vel_x, linear_speed, False])
+        if (linear_speed < max_reachable_vel_x) and (linear_speed > min_reachable_vel_x):
+            self.list_vel.append([min_reachable_vel_x,max_reachable_vel_x, linear_speed, True])
+        if (angular_speed > max_reachable_vel_w) or (angular_speed < min_reachable_vel_w):
+            self.list_angular_vel.append([min_reachable_vel_w, max_reachable_vel_w, False])
+        if (angular_speed < max_reachable_vel_w) and (angular_speed > min_reachable_vel_w):
+            self.list_angular_vel.append([min_reachable_vel_w, max_reachable_vel_w, True])
+
+
         
         # We tell TurtleBot2 the linear and angular speed to set to execute
         self.move_base( linear_speed,
