@@ -13,7 +13,8 @@ from nav_msgs.msg import Odometry
 
 # Hyper parameters
 MAX_LINEAR_VELOCITY = 0.65  #0.5
-MAX_ANGULAR_VELOCITY = 1.0 #0.75 #1.0 (original)
+MAX_ANGULAR_VELOCITY = 3.14 #0.75 #1.0 (original)
+MIN_ANGULAR_VELOCITY = -3.14
 
 
 class MLSHAgent(object):
@@ -218,23 +219,49 @@ class Environment(object):
         print("The command velocity {}".format(act[0]))
 
 
-        if command.linear.x > (self.vel[0] + (self.linear_acc_limit * self.del_t)):
+        max_lin_vel = 0
+        max_ang_vel = 0
+        min_ang_vel = 0
+        min_lin_vel = 0
+
+        if (self.vel[0] + (self.linear_acc_limit * self.del_t)) >= MAX_LINEAR_VELOCITY:
+            max_lin_vel = MAX_LINEAR_VELOCITY
+        else:
+            max_lin_vel = (self.vel[0] + (self.linear_acc_limit * self.del_t))
+
+        if self.vel[1] + (self.angular_acc_limit * self.del_t) >= MAX_ANGULAR_VELOCITY:
+            max_ang_vel = MAX_ANGULAR_VELOCITY
+        else:
+            max_ang_vel = self.vel[1] + (self.angular_acc_limit * self.del_t)
+
+        if self.vel[1] - (self.angular_acc_limit * self.del_t) <= MIN_ANGULAR_VELOCITY:
+            min_ang_vel = MIN_ANGULAR_VELOCITY
+        else:
+            min_ang_vel = self.vel[1] - (self.angular_acc_limit * self.del_t)
+
+        if (self.vel[0] - (self.linear_acc_limit * self.del_t)) < 0:
+            min_lin_vel = 0
+        else:
+            min_lin_vel = (self.vel[0] - (self.linear_acc_limit * self.del_t))
+
+
+        if command.linear.x > max_lin_vel:
         	print("The velocity is not dynamically feasible ")
         	self.num_of_violations = self.num_of_violations + 1
-        	self.list_vel.append([(self.vel[0] - (self.linear_acc_limit * self.del_t)), (self.vel[0] + (self.linear_acc_limit * self.del_t)), act[0], False])
-        elif command.linear.x < (self.vel[0] - (self.linear_acc_limit * self.del_t)):
+        	self.list_vel.append([min_lin_vel, max_lin_vel, act[0], False])
+        elif command.linear.x < min_lin_vel:
         	print("Not feasible")
         	self.num_of_violations = self.num_of_violations + 1
-        	self.list_vel.append([(self.vel[0] - (self.linear_acc_limit * self.del_t)), (self.vel[0] + (self.linear_acc_limit * self.del_t)), act[0], False])
-        elif command.angular.z > (self.vel[1] + (self.angular_acc_limit * self.del_t)):
+        	self.list_vel.append([min_lin_vel, max_lin_vel, act[0], False])
+        elif command.angular.z > max_ang_vel:
             self.num_of_violations = self.num_of_violations + 1
-            self.list_angular_vel.append([self.vel[1] - (self.angular_acc_limit * self.del_t), self.vel[1] + (self.angular_acc_limit * self.del_t), act[1], False])
-        elif command.angular.z < (self.vel[1] - (self.angular_acc_limit * self.del_t)):
+            self.list_angular_vel.append([min_ang_vel, max_ang_vel, act[1], False])
+        elif command.angular.z < min_ang_vel:
             self.num_of_violations = self.num_of_violations + 1
-            self.list_angular_vel.append([self.vel[1] - (self.angular_acc_limit * self.del_t), self.vel[1] + (self.angular_acc_limit * self.del_t), act[1], False])
+            self.list_angular_vel.append([min_ang_vel, max_ang_vel, act[1], False])
         else:
-            self.list_vel.append([(self.vel[0] - (self.linear_acc_limit * self.del_t)), (self.vel[0] + (self.linear_acc_limit * self.del_t)), act[0], True])
-            self.list_angular_vel.append([(self.vel[0] - (self.linear_acc_limit * self.del_t)), (self.vel[0] + (self.linear_acc_limit * self.del_t)), act[0], True])
+            self.list_vel.append([min_lin_vel, max_lin_vel, act[0], True])
+            self.list_angular_vel.append([min_ang_vel, max_ang_vel, act[1], True])
         self.num_of_steps = self.num_of_steps + 1
         print("Total Number of violations {}".format(self.num_of_violations))
         print("Total Number of steps {}".format(self.num_of_steps))
