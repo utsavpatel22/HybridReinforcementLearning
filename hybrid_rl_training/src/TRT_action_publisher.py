@@ -20,7 +20,7 @@ if __name__ == '__main__':
 		action_publisher = rospy.Publisher("/predicted_action", Int64,queue_size=10)
 		observation_subscriber = rospy.Subscriber("/obs_data", numpy_msg(Floats), getObservation)
 		# First deserialize your frozen graph:
-		with tf.gfile.GFile('saved_model.pb', "rb") as f:
+		with tf.gfile.GFile('best_saved_model.pb', "rb") as f:
 			frozen_graph = tf.GraphDef()
 			frozen_graph.ParseFromString(f.read())
 	    # Now you can create a TensorRT inference graph from your
@@ -28,6 +28,7 @@ if __name__ == '__main__':
 		print("---------------Optimizing the graph-----------------")
 		converter = trt.TrtGraphConverter(
 			input_graph_def=frozen_graph,
+			precision_mode='FP16',
 			nodes_blacklist=['output/ArgMax:0']) #output nodes
 		trt_graph = converter.convert()
 		print("-------------- Optimization Done -------------------")
