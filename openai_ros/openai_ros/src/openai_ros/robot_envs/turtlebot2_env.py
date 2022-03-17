@@ -50,6 +50,7 @@ class TurtleBot2Env(robot_gazebo_env.RobotGazeboEnv):
         # Internal Vars
         # Doesnt have any accesibles
         self.controllers_list = []
+        robot_number = 2
 
         # It doesnt use namespace
         self.robot_name_space = ""
@@ -72,13 +73,13 @@ class TurtleBot2Env(robot_gazebo_env.RobotGazeboEnv):
         self._check_all_sensors_ready()
 
         # We Start all the ROS related Subscribers and publishers
-        rospy.Subscriber("/turtlebot"+str(self.robot_number)+"/ground_truth/state", Odometry, self._odom_callback)
+        rospy.Subscriber("/robot"+str(self.robot_number)+"/odom", Odometry, self._odom_callback)
         #rospy.Subscriber("/camera/depth/image_raw", Image, self._camera_depth_image_raw_callback)
         #rospy.Subscriber("/camera/depth/points", PointCloud2, self._camera_depth_points_callback)
         #rospy.Subscriber("/camera/rgb/image_raw", Image, self._camera_rgb_image_raw_callback)
-        rospy.Subscriber("/turtlebot"+str(self.robot_number)+"/scan_filtered", LaserScan, self._laser_scan_callback)
+        rospy.Subscriber("/robot"+str(self.robot_number)+"/scan", LaserScan, self._laser_scan_callback)
 
-        self._cmd_vel_pub = rospy.Publisher("/turtlebot"+str(self.robot_number)+"/cmd_vel_mux/input/navi", Twist, queue_size=1)
+        self._cmd_vel_pub = rospy.Publisher("/robot"+str(self.robot_number)+"/cmd_vel", Twist, queue_size=1)
 
         self._check_publishers_connection()
 
@@ -114,14 +115,15 @@ class TurtleBot2Env(robot_gazebo_env.RobotGazeboEnv):
 
     def _check_odom_ready(self):
         self.odom = None
-        rospy.logdebug("Waiting for "+"/turtlebot"+str(self.robot_number)+ "/ground_truth/state to be READY...")
+        print("Robot number ", self.robot_number)
+        rospy.logdebug("Waiting for "+"/robot"+str(self.robot_number)+ "/ground_truth/state to be READY...")
         while self.odom is None and not rospy.is_shutdown():
             try:
-                self.odom = rospy.wait_for_message("/turtlebot"+str(self.robot_number)+"/ground_truth/state", Odometry, timeout=5.0)
-                rospy.logdebug("Current"+"/turtlebot"+ str(self.robot_number)+ "/ground_truth/state READY=>")
+                self.odom = rospy.wait_for_message("/robot"+str(self.robot_number)+"/odom", Odometry, timeout=5.0)
+                rospy.logdebug("Current"+"/robot"+ str(self.robot_number)+ "/odom READY=>")
 
             except:
-                rospy.logerr("Current" +"/turtlebot"+ str(self.robot_number)+  "/ground_truth/state not ready yet, retrying for getting odom")
+                rospy.logerr("Current" +"/turtlebot"+ str(self.robot_number)+  "/odom not ready yet, retrying for getting odom")
 
         return self.odom
         
@@ -167,14 +169,14 @@ class TurtleBot2Env(robot_gazebo_env.RobotGazeboEnv):
 
     def _check_laser_scan_ready(self):
         self.laser_scan = None
-        rospy.logdebug("Waiting for " +"/turtlebot"+str(self.robot_number)+"/scan_filtered to be READY...")
+        rospy.logdebug("Waiting for " +"/robot"+str(self.robot_number)+"/scan to be READY...")
         while self.laser_scan is None and not rospy.is_shutdown():
             try:
-                self.laser_scan = rospy.wait_for_message("/turtlebot"+str(self.robot_number)+"/scan_filtered", LaserScan, timeout=5.0)
-                rospy.logdebug("Current "+"/turtlebot"+str(self.robot_number)+" /scan_filtered READY=>")
+                self.laser_scan = rospy.wait_for_message("/robot"+str(self.robot_number)+"/scan", LaserScan, timeout=5.0)
+                rospy.logdebug("Current "+"/robot"+str(self.robot_number)+" /scan READY=>")
 
             except:
-                rospy.logerr("Current "+"/turtlebot"+str(self.robot_number)+" /scan_filtered not ready yet, retrying for getting laser_scan")
+                rospy.logerr("Current "+"/robot"+str(self.robot_number)+" /scan not ready yet, retrying for getting laser_scan")
         return self.laser_scan
         
 

@@ -12,21 +12,21 @@ class GazeboConnection():
     def __init__(self, start_init_physics_parameters, robot_number, initial_pose, reset_world_or_sim, max_retry = 20):
 
         self._max_retry = max_retry
-        self.unpause = rospy.ServiceProxy('/gazebo/unpause_physics', Empty)
-        self.pause = rospy.ServiceProxy('/gazebo/pause_physics', Empty)
-        self.reset_simulation_proxy = rospy.ServiceProxy('/gazebo/reset_simulation', Empty)
-        self.reset_world_proxy = rospy.ServiceProxy('/gazebo/reset_world', Empty)
+        self.unpause = rospy.ServiceProxy('/unpause_physics', Empty)
+        self.pause = rospy.ServiceProxy('/pause_physics', Empty)
+        self.reset_simulation_proxy = rospy.ServiceProxy('/reset_simulation', Empty)
+        self.reset_world_proxy = rospy.ServiceProxy('/reset_world', Empty)
         self.reset_robot = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
         self.robot_number = robot_number
         self.initial_pose = initial_pose
 
         # Setup the Gravity Controle system
-        service_name = '/gazebo/set_physics_properties'
-        rospy.logdebug("Waiting for service " + str(service_name))
-        rospy.wait_for_service(service_name)
-        rospy.logdebug("Service Found " + str(service_name))
+        # service_name = '/gazebo/set_physics_properties'
+        # rospy.logdebug("Waiting for service " + str(service_name))
+        # rospy.wait_for_service(service_name)
+        # rospy.logdebug("Service Found " + str(service_name))
 
-        self.set_physics = rospy.ServiceProxy(service_name, SetPhysicsProperties)
+        # self.set_physics = rospy.ServiceProxy(service_name, SetPhysicsProperties)
         self.start_init_physics_parameters = start_init_physics_parameters
         self.reset_world_or_sim = reset_world_or_sim
         self.init_values()
@@ -87,6 +87,7 @@ class GazeboConnection():
         we need to reset world that ONLY resets the object position, not the entire simulation
         systems.
         """
+        self.reset_world_or_sim = "WORLD"
         if self.reset_world_or_sim == "SIMULATION":
             rospy.logdebug("SIMULATION RESET")
             self.resetSimulation()
@@ -95,21 +96,21 @@ class GazeboConnection():
             self.resetWorld()
         elif self.reset_world_or_sim == "ROBOT":
             rospy.logdebug("ROBOT RESET")
-            self.resetRobot()
+            # self.resetRobot()
         elif self.reset_world_or_sim == "NO_RESET_SIM":
             rospy.logdebug("NO RESET SIMULATION SELECTED")
         else:
             rospy.logdebug("WRONG Reset Option:"+str(self.reset_world_or_sim))
 
     def resetSimulation(self):
-        rospy.wait_for_service('/gazebo/reset_simulation')
+        rospy.wait_for_service('/reset_simulation')
         try:
             self.reset_simulation_proxy()
         except rospy.ServiceException as e:
             print ("/gazebo/reset_simulation service call failed")
 
     def resetWorld(self):
-        rospy.wait_for_service('/gazebo/reset_world')
+        rospy.wait_for_service('/reset_world')
         try:
             self.reset_world_proxy()
         except rospy.ServiceException as e:
@@ -124,8 +125,7 @@ class GazeboConnection():
         robot_reset_request.model_state.pose.orientation.y = self.initial_pose["y_rot_init"]
         robot_reset_request.model_state.pose.orientation.z = self.initial_pose["z_rot_init"]
         robot_reset_request.model_state.pose.orientation.w = self.initial_pose["w_rot_init"]
-
-        rospy.wait_for_service('/gazebo/set_model_state')
+        rospy.wait_for_service('/set_model_state')
         try:
             self.reset_robot(robot_reset_request)
         except rospy.ServiceException as e:
@@ -167,29 +167,29 @@ class GazeboConnection():
         self._ode_config.erp = 0.2
         self._ode_config.max_contacts = 20
 
-        self.update_gravity_call()
+        # self.update_gravity_call()
 
 
-    def update_gravity_call(self):
+    # def update_gravity_call(self):
 
-        self.pauseSim()
+    #     self.pauseSim()
 
-        set_physics_request = SetPhysicsPropertiesRequest()
-        set_physics_request.time_step = self._time_step.data
-        set_physics_request.max_update_rate = self._max_update_rate.data
-        set_physics_request.gravity = self._gravity
-        set_physics_request.ode_config = self._ode_config
+    #     set_physics_request = SetPhysicsPropertiesRequest()
+    #     set_physics_request.time_step = self._time_step.data
+    #     set_physics_request.max_update_rate = self._max_update_rate.data
+    #     set_physics_request.gravity = self._gravity
+    #     set_physics_request.ode_config = self._ode_config
 
-        rospy.logdebug(str(set_physics_request.gravity))
+    #     rospy.logdebug(str(set_physics_request.gravity))
 
-        result = self.set_physics(set_physics_request)
-        rospy.logdebug("Gravity Update Result==" + str(result.success) + ",message==" + str(result.status_message))
+    #     result = self.set_physics(set_physics_request)
+    #     rospy.logdebug("Gravity Update Result==" + str(result.success) + ",message==" + str(result.status_message))
 
-        self.unpauseSim()
+    #     self.unpauseSim()
 
     def change_gravity(self, x, y, z):
         self._gravity.x = x
         self._gravity.y = y
         self._gravity.z = z
 
-        self.update_gravity_call()
+        # self.update_gravity_call()
