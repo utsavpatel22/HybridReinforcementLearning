@@ -110,6 +110,7 @@ class GazeboConnection():
             print ("/gazebo/reset_simulation service call failed")
 
     def resetWorld(self):
+        print("Reset is called")
         rospy.wait_for_service('/reset_world')
         try:
             self.reset_world_proxy()

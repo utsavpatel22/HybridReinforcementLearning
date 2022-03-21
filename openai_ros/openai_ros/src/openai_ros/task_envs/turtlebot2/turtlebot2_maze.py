@@ -18,6 +18,7 @@ from openai_ros.gazebo_connection import GazeboConnection
 import cv2
 import os
 import csv
+from geometry_msgs.msg import PointStamped
 
 
 # The path is __init__.py of openai_ros, where we import the TurtleBot2MazeEnv directly
@@ -81,7 +82,14 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.min_angular_speed = rospy.get_param('/turtlebot2/min_angular_speed',0)
 
         self.robot_number = robot_number
-        self._get_goal_location()
+        self.use_fixed_goals = False 
+        if self.use_fixed_goals:
+            self._get_goal_location()
+        else:
+            self.goal_pose = {}
+            self.goal_pose["x"] = 0
+            self.goal_pose["y"] = 0
+            rospy.Subscriber("/robot"+str(self.robot_number)+"/lookahead_point", PointStamped, self._goal_callback)
 
         self.pedestrians_info = {}
         self.pedestrians_info["4_robot_3D1P"] = {}
@@ -737,6 +745,10 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
                self.goal_pose["x"] = 4.4
                self.goal_pose["y"] = -8.4
 
+    def _goal_callback(self, data):
+        self.goal_pose["x"] = data.point.x
+        self.goal_pose["y"] = data.point.y
+
 
     def _get_distance2goal(self):
         """ Gets the distance to the goal
@@ -948,7 +960,7 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
 
         self.current_distance2goal = self._get_distance2goal()
         if (self.current_distance2goal < 0.5):
-            self._episode_done = True
+            self._episode_done = False#True
             self._reached_goal = True
 
 

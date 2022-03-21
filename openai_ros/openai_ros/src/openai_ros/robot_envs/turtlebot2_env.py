@@ -79,7 +79,7 @@ class TurtleBot2Env(robot_gazebo_env.RobotGazeboEnv):
         #rospy.Subscriber("/camera/rgb/image_raw", Image, self._camera_rgb_image_raw_callback)
         rospy.Subscriber("/robot"+str(self.robot_number)+"/scan", LaserScan, self._laser_scan_callback)
 
-        self._cmd_vel_pub = rospy.Publisher("/robot"+str(self.robot_number)+"/cmd_vel", Twist, queue_size=1)
+        self._cmd_vel_pub = rospy.Publisher("/robot"+str(self.robot_number)+"/dwarl_vel", Twist, queue_size=1)
 
         self._check_publishers_connection()
 
