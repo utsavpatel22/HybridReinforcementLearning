@@ -81,7 +81,8 @@ class TurtleBot2MazeEnv(turtlebot2_env.TurtleBot2Env):
         self.min_linear_speed = rospy.get_param('/turtlebot2/min_linear_speed',0)
         self.min_angular_speed = rospy.get_param('/turtlebot2/min_angular_speed',0)
 
-        self.robot_number = robot_number
+        # self.robot_number = robot_number
+        self.robot_number = 2
         self.use_fixed_goals = False 
         if self.use_fixed_goals:
             self._get_goal_location()
